@@ -32,6 +32,8 @@ def errorWindow(
 ) -> bool:
     """
     Revisa si se cumplen las condiciones para ejecutar el programa. Si no se cumplen, se ejecuta una ventana de error con la información del error.
+    Eventualmente se tiene que agregar otro input a la función para que pueda revisar si se cumplen las condiciones.
+    Este otro input posiblemente será el utput de la función contol úbicada en el backend control_final.py.
 
     Args:
         window (tk.Tk): Ventana principal del programa donde se ejecutará la ventana de error.
@@ -98,3 +100,4 @@ def errorWindow(
                 errorWindowButton.bind("<Enter>", on_enter_errorButton)
                 errorWindowButton.bind("<Leave>", on_leave_errorButton)
                 return True  # Se despliega el errorWindow (y no se puede correr el programa)
+

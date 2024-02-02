@@ -10,7 +10,6 @@ Librerías:
 """
 
 
-
 # Importamos paquetes
 import pandas as pd
 from datetime import datetime
@@ -37,7 +36,6 @@ COD_PUERTO_DESTINO = var.COD_PUERTO_DESTINO
 
 
 if __name__ == "__main__":
-
     # Paths to your input files
     embarques_path_ = (
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
@@ -59,7 +57,9 @@ if __name__ == "__main__":
     )
 
 
-def pseudoControl(embarques_path: str, facturas_path: str, tarifa_path: str) -> pd.DataFrame:
+def pseudoControl(
+    embarques_path: str, facturas_path: str, tarifa_path: str
+) -> pd.DataFrame:
     """
     Esta función toma tres archivos: embarques, tarifa y factura para agregar la información pertinente a un archivo de control de embarques.
 
@@ -67,46 +67,53 @@ def pseudoControl(embarques_path: str, facturas_path: str, tarifa_path: str) -> 
         embarques_path (str): Path del archivo de embarques.
         facturas_path (str): Path del archivo de facturas.
         tarifa_path (str): Path del archivo de tarifa.
-    
+
     Returns:
         pd.DataFrame: Dataframe de control de embarques.
     """
     for file_path in [embarques_path, facturas_path, tarifa_path]:
         assert type(file_path) == str, f"The file path '{file_path}' is not a string."
         assert os.path.exists(file_path), f"The file '{file_path}' does not exist."
-        assert os.path.isfile(file_path), f"'{file_path}' is not a file; it may be a directory."
+        assert os.path.isfile(
+            file_path
+        ), f"'{file_path}' is not a file; it may be a directory."
 
-    if __name__ == "__main__" and embarques_path == embarques_path_ and facturas_path == facturas_path_ and tarifa_path == tarifa_path_:
-        
+    if (
+        __name__ == "__main__"
+        and embarques_path == embarques_path_
+        and facturas_path == facturas_path_
+        and tarifa_path == tarifa_path_
+    ):
         # Load or create and save pickled files
         if os.path.exists(embarques_pickle):
             embarques = pd.read_pickle(embarques_pickle)
         else:
-            embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype = str)
+            embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
             embarques.to_pickle(embarques_pickle)
 
         if os.path.exists(facturas_pickle):
             facturas = pd.read_pickle(facturas_pickle)
         else:
-            facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype = str)
+            facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
             facturas.to_pickle(facturas_pickle)
 
         if os.path.exists(tarifa_pickle):
             tarifa = pd.read_pickle(tarifa_pickle)
         else:
-            tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives")
+            tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
             tarifa.to_pickle(tarifa_pickle)
     else:
-        embarques = pd.read_excel(embarques_path, sheet_name="Hoja1",  dtype=str)
+        embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
         facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
-        tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives")
+        tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
 
     # Traducimos
-    embarques.rename(columns=embarquesDict, inplace=True,)
+    embarques.rename(
+        columns=embarquesDict,
+        inplace=True,
+    )
     facturas.rename(columns=facturasDict, inplace=True)
     tarifa.rename(columns=tarifaDict, inplace=True)
-
-    
 
     # Extraemos las columnas a utilizar en los dataframes
     embarques = embarques[list(embarquesDict.values())]
@@ -139,8 +146,10 @@ def pseudoControl(embarques_path: str, facturas_path: str, tarifa_path: str) -> 
     ]
 
     control[date_columns] = control[date_columns].apply(pd.to_datetime)
-    #control[date_columns] = pd.to_datetime(control[date_columns], errors="coerce")
-    control["FACT PROFORMA $/CAJA"] = pd.to_numeric(control["FACT PROFORMA $/CAJA"], errors="coerce")
+    # control[date_columns] = pd.to_datetime(control[date_columns], errors="coerce")
+    control["FACT PROFORMA $/CAJA"] = pd.to_numeric(
+        control["FACT PROFORMA $/CAJA"], errors="coerce"
+    )
     control["CAJAS"] = pd.to_numeric(control["CAJAS"], errors="coerce")
 
     # Agregamos las columnas que faltan

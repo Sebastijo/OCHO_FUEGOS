@@ -26,10 +26,14 @@ class embarqueL:
         self.main_summary = main_summary
         self.location = location
         self.commission = 0.0
+        self.commission_value = 0.0
         for idx in self.cost.index:
             match = re.search(r"\(([\d.]+)%\)", idx)
             if match:
                 self.commission = float(match.group(1)) / 100
+                self.commission_value = float(
+                    str(self.cost.at[idx, "USD"]).replace("$", "")
+                )
                 break
 
         self.CSG = None
@@ -41,7 +45,7 @@ if __name__ == "__main__":
     main_df = pd.DataFrame(main_data)
 
     # Sample DataFrame for "cost" with "Commission (8%)" in the index
-    cost_data = {"Cost": [10, 20, 30]}
+    cost_data = {"RMB": [10, 20, 30], "USD": [1, 2, 3]}
     cost_index = ["Item 1", "Item 2", "Commission (8%)"]
     cost_df = pd.DataFrame(cost_data, index=cost_index)
 
@@ -58,3 +62,9 @@ if __name__ == "__main__":
 
     # Test your class with these DataFrames
     test = embarqueL(main_df, cost_df, note_df, main_summary_df, location)
+
+    print(test.main)
+    print(test.cost)
+    print(test.main_summary)
+    print(test.commission)
+    print(test.commission_value)

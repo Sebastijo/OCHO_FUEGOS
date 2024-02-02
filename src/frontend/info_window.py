@@ -34,6 +34,7 @@ def infoWindow(info: str, window: tk.Tk) -> None:
 
     Args:
         info (str): Texto que aparecerá en la ventana.
+        window (tk.Tk): Ventana padre.
 
     Returns:
         None

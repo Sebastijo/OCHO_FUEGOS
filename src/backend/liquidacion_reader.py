@@ -12,8 +12,6 @@ Librerías:
 - tabula: 2.9.0
 """
 
-
-
 # Importamos paquetes
 import os
 import tabula
@@ -25,9 +23,11 @@ import numpy as np
 if __name__ == "__main__":
     from src.config import variables as var
     from src.backend.embarque_liquidacion_class import embarqueL
+    from src.backend.liquidacion_revisar import revisar_liquidacion
 else:
     from ..config import variables as var
     from .embarque_liquidacion_class import embarqueL
+    from .liquidacion_revisar import revisar_liquidacion
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
-def import_and_group(liquidacion: str) -> tuple[list,list]:
+def import_and_group(liquidacion: str) -> tuple[list, list]:
     """
     Takes in a liquidación file in the forma of a PDF in the format of the 12Islands liquidation format (can have multimple embarques)
     Returns tuple with two coordinates:
@@ -117,7 +117,7 @@ def import_and_group(liquidacion: str) -> tuple[list,list]:
             cardinality = len(tables_in_page)  # Cantidad de tables en la hoja
             assert (
                 cardinality >= 3 or cardinality == 1
-            ), "La cantidad de tablas en la página no es correcta"
+            ), f"La cantidad de tablas en la página no es correcta. Las tablas en {liquidacion} son: {tables_in_page}"
             if (
                 cardinality >= 3
             ):  # Si es la última página de embarque, cambiamos de embarque
@@ -172,16 +172,30 @@ def embarques_three_tables(
         # Remove Chinese characters from column names
         df.columns = df.columns.str.replace("[^\x00-\x7F]+", "", regex=True)
         # Remove Chinese characters from DataFrame content
-        #df = df.applymap(lambda x: "".join(filter(lambda char: char.isascii(), str(x)))) // depricated
-        df = df.apply(lambda x: x.map(lambda char: "".join(filter(lambda c: c.isascii(), str(char)))))
+        # df = df.applymap(lambda x: "".join(filter(lambda char: char.isascii(), str(x)))) // depricated
+        df = df.apply(
+            lambda x: x.map(
+                lambda char: "".join(filter(lambda c: c.isascii(), str(char)))
+            )
+        )
         # Remove leading slash in all columns
         # df = df.applymap(lambda x: x.lstrip("/$") if isinstance(x, str) else x) // depricated
-        df = df.apply(lambda x: x.map(lambda element: element.lstrip("/$") if isinstance(element, str) else element))
+        df = df.apply(
+            lambda x: x.map(
+                lambda element: (
+                    element.lstrip("/$") if isinstance(element, str) else element
+                )
+            )
+        )
         # Remove leading spaces and replace leading slash in column names
         df.columns = df.columns.str.strip().str.replace("^/", "", regex=True)
         # Remove leading spaces in DataFrame content
         # df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x) // depricated
-        df = df.apply(lambda x: x.map(lambda element: element.strip() if isinstance(element, str) else element))
+        df = df.apply(
+            lambda x: x.map(
+                lambda element: element.strip() if isinstance(element, str) else element
+            )
+        )
         return df
 
     def add_df(df1: pd.DataFrame, df2: pd.DataFrame) -> tuple:
@@ -267,10 +281,21 @@ def embarques_three_tables(
             if embarque_[tipo] is None:
                 formato_valido = False
 
+        # Remplazamos los carriage returns por espacios en los nombres de las columnas de embarque_["main"]
+        if formato_valido:
+            embarque_["main"].columns = embarque_["main"].columns.str.replace(
+                "[\r]", " ", regex=True
+            )
+            embarque_["main"].columns = [
+                col.replace("  ", " ") for col in embarque_["main"].columns
+            ]
+
         # Revisamos que se tengan las columnas válidas en main
         if (
             formato_valido
-            and set(main_dict_liq.keys()) - set(embarque_["main"].columns) - {"果园\rCSG"}
+            and set(main_dict_liq.keys())
+            - set(embarque_["main"].columns)
+            - {"果园 CSG"}
             != set()
         ):
             formato_valido = False
@@ -315,22 +340,48 @@ def embarques_three_tables(
         # Extraemos main_summarry y establecemos el fomrato de las columnas de main:
         if formato_valido:
             # Separamos el resumen de main y lo agregamos como un nuevo elemeto del embarque
-            embarque_["main_summary"] = (
-                embarque_["main"].iloc[-1:].dropna(axis=1, how="all").copy()
+            embarque_["main_summary"] = embarque_["main_summary"] = (
+                embarque_["main"].iloc[-1:].copy()
             )
+            embarque_["main_summary"] = embarque_["main_summary"].reset_index(drop=True)
+            try:
+                embarque_["main_summary"] = embarque_["main_summary"][
+                    [
+                        "CAJAS LIQUIDADAS",
+                        "TOTAL RMB",
+                        "TOTAL USD",
+                        "RETORNO FOB/CJ",
+                        "RETORNO FOB",
+                    ]
+                ]
+                for col in embarque_["main_summary"]:
+                    embarque_["main_summary"][col] = pd.to_numeric(
+                        embarque_["main_summary"][col].replace(
+                            "[^\d.]", "", regex=True
+                        ),
+                        errors="coerce",
+                    )
+            except:
+                formato_valido = False
+
+        if formato_valido:
+            embarque_["main_summary"].index = ["Total"]
+
             embarque_["main"] = embarque_["main"].iloc[:-1].copy()
             # ESTABLECEMOS EL FORMATO DE LAS COLUMNAS DE MAIN:
 
             # Replace 'nan' with numpy's representation of NaN
             embarque_["main"] = embarque_["main"].replace("nan", np.nan)
             # Eliminamos elementos sin cajas de main
-            embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS"])
+            embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS LIQUIDADAS"])
             # Asignamos el KG NET/CAJA de los elementos que les pueda faltar
             if embarque_["main"]["KG NET/CAJA"].isna().any():
                 column_values = embarque_["main"]["KG NET/CAJA"].dropna()
                 if len(column_values.unique()) == 1:
                     common_value = column_values.iloc[0]
-                    embarque_["main"]["KG NET/CAJA"] = embarque_["main"]["KG NET/CAJA"].fillna(common_value)
+                    embarque_["main"]["KG NET/CAJA"] = embarque_["main"][
+                        "KG NET/CAJA"
+                    ].fillna(common_value)
                 else:
                     formato_valido = False
 
@@ -344,11 +395,11 @@ def embarques_three_tables(
                     embarque_["main"]["KG NET/CAJA"], errors="coerce"
                 )
                 # Las cajas como numeros
-                embarque_["main"]["CAJAS"] = embarque_["main"]["CAJAS"].str.replace(
-                    r"[^0-9.]", "", regex=True
-                )
-                embarque_["main"]["CAJAS"] = pd.to_numeric(
-                    embarque_["main"]["CAJAS"], errors="coerce"
+                embarque_["main"]["CAJAS LIQUIDADAS"] = embarque_["main"][
+                    "CAJAS LIQUIDADAS"
+                ].str.replace(r"[^0-9.]", "", regex=True)
+                embarque_["main"]["CAJAS LIQUIDADAS"] = pd.to_numeric(
+                    embarque_["main"]["CAJAS LIQUIDADAS"], errors="coerce"
                 )
 
                 # Las siguientes columnas como números:
@@ -415,33 +466,27 @@ def feature_engine(embarque: embarqueL) -> None:
     # Definimos los costos totales
     fees_index = embarque.cost.index.get_loc("Total Fees")  # Índice de Total Fees
     costo_total = embarque.cost.iloc[:fees_index].sum()  # Total Fees a mano
-    """!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Esto es para las alertas, después
-    revise = []
-    if abs(costo_total["USD"] - embarque.cost.loc["Total Fees", "USD"]) <= 5:
-        revise.append(
-            {
-                "Elemento": embarque.location,
-                "Motivo": "'Total Fees' no coincide con la suma de los elementos de costo.",
-            }
-        )
-    """
 
     # Definimos los kg totales del embarque
     main_Kg = embarque.main.copy()
-    main_Kg["KG DE LA FILA"] = main_Kg["KG NET/CAJA"] * main_Kg["CAJAS"]
+    main_Kg["KG DE LA FILA"] = main_Kg["KG NET/CAJA"] * main_Kg["CAJAS LIQUIDADAS"]
     kg_totales = main_Kg["KG DE LA FILA"].sum()
     costo_por_kg = costo_total["USD"] / kg_totales
 
     # Agregamos las columnas de costo
     embarque.main["COSTO"] = (
-        embarque.main["KG NET/CAJA"] * costo_por_kg * embarque.main["CAJAS"]
+        embarque.main["KG NET/CAJA"] * costo_por_kg * embarque.main["CAJAS LIQUIDADAS"]
     )
-    embarque.main["COSTO/CJ"] = embarque.main["COSTO"] / embarque.main["CAJAS"]
+    embarque.main["COSTO/CJ"] = (
+        embarque.main["COSTO"] / embarque.main["CAJAS LIQUIDADAS"]
+    )
     embarque.main["COSTO/KG"] = costo_por_kg
 
     # Agregamos la columna de comision
     embarque.main["COMISION"] = embarque.commission * embarque.main["TOTAL USD"]
-    embarque.main["COMISION/CJ"] = embarque.main["COMISION"] / embarque.main["CAJAS"]
+    embarque.main["COMISION/CJ"] = (
+        embarque.main["COMISION"] / embarque.main["CAJAS LIQUIDADAS"]
+    )
     embarque.main["COMISION/KG"] = (
         embarque.main["COMISION/CJ"] / embarque.main["KG NET/CAJA"]
     )
@@ -458,19 +503,20 @@ def feature_engine(embarque: embarqueL) -> None:
 
 
 # ARREGLAR COMENTARIO INTRODUCTORIO
-def liquidaciones(folder: str) -> tuple[list,dict]:
+def liquidaciones(folder: str) -> tuple[list, dict, dict]:
     """
     Takes a PDF folder with the liquidations in the format of 12Islands as multiple PDFs.
     Returns a tuple:
 
     0) A list of embarqueL, the n-th element of the list is an embarqueL corresponding to the n-th embarque in folder.
     1) A dictionary, the keys are the names of the PDFs in folder and the values are lists of integers corresponding to the first page of the embarques where errors where found.
+    2) A dictonary, the keys are tuples with the name of the PDF and the page number of the error and the values are the errors, as a list, found in the format of the embarques.
 
     Args:
         liquidaciones (list): List of lists of DataFrames
 
     Returns:
-        tuple: tuple with two coordinates (list, dict)
+        tuple: tuple with two coordinates (list, dict, dict)
 
     Raises:
         AssertionError: If the path does not exist
@@ -478,15 +524,19 @@ def liquidaciones(folder: str) -> tuple[list,dict]:
     """
 
     assert os.path.exists(folder), f"The path {folder} does not exist."
-    assert os.path.isdir(folder), f"The path '{folder}' is not a folder."
 
     # Creamos la lista de embarques y de errores
     embarques = []
     errores = {}
     ubicaciones = []
-    for liquidacion in os.listdir(folder):
+
+    def procesarLiquidacionYAlmacenarDatos(liquidacion: str) -> None:
+        """
+        Recibe un string con el path de (la carpeta de liquidaciones o) una liquidación y la procesa para ser almacenada en la lista de embarques y errores.
+        """
         # Creamos una key que distingue el archivo
-        key = liquidacion.split(".")[0]
+        key = os.path.basename(liquidacion)
+        key = os.path.splitext(key)[0]
         # obtenemos el path completo
         liquidacion = os.path.join(folder, liquidacion)
 
@@ -496,9 +546,17 @@ def liquidaciones(folder: str) -> tuple[list,dict]:
         # Ajustamos el fomrato de cada lista de la lista embaruqes tal que tenga 5 DataFrames correspondiendo al "main", "cost", "note", "main_summary"
         embarque, error, paginas = embarques_three_tables(embarque, paginas)
         ubicacion = [(key, pagina) for pagina in paginas]
-        ubicaciones += ubicacion
-        embarques += embarque
+        ubicaciones.extend(ubicacion)
+        embarques.extend(embarque)
         errores[key] = error
+
+    if os.path.isdir(folder):
+        for liquidacion in os.listdir(folder):
+            procesarLiquidacionYAlmacenarDatos(liquidacion)
+    else:
+        assert os.path.isfile(folder), f"The path {folder} is not a file or a folder."
+        procesarLiquidacionYAlmacenarDatos(folder)
+
     assert len(ubicaciones) == len(
         embarques
     ), "La cantidad de ubicaciones no coincide con la cantidad de embarques"
@@ -506,6 +564,7 @@ def liquidaciones(folder: str) -> tuple[list,dict]:
     # Guardamos los embarques en forma de la clase embarqueL
     # Creamos en cada embarque las columnas con los keys para el merge
     embarques_ = []  # la lista con los embarques como clase
+    revisar = {}
     for embarque, ubicacion in zip(embarques, ubicaciones):
         # Guardamos el embarque como una instancia de embarqueL
         embarque = embarqueL(
@@ -516,6 +575,11 @@ def liquidaciones(folder: str) -> tuple[list,dict]:
             ubicacion,
         )
 
+        # Revisamos el embarque
+        hay_inconsistencias, inconsistencias = revisar_liquidacion(embarque)
+        if hay_inconsistencias:
+            revisar[ubicacion] = inconsistencias
+
         # Verificamos si el embarque tiene columna de CSG
         embarque.CSG = "CSG" in embarque.main.columns  # "El embarque tiene columna CSG"
 
@@ -525,11 +589,11 @@ def liquidaciones(folder: str) -> tuple[list,dict]:
         # Agregamos el embarque a la lista de embarques_
         embarques_.append(embarque)
 
-    return embarques_, errores
+    return embarques_, errores, revisar
 
 
 if __name__ == "__main__":
-    embarques, errores = liquidaciones(folder)
+    embarques, errores, revisar = liquidaciones(folder)
 
     print("Main del último embarque:")
     print(embarques[-1].main)
@@ -540,5 +604,11 @@ if __name__ == "__main__":
     print("Note del último embarque:")
     print(embarques[-1].note)
     print()
+    print("Resumen de main del último embarque:")
+    print(embarques[-1].main_summary)
+    print()
     print("Errores totales:")
     print(errores)
+    print()
+    print("Por revisar:")
+    print(revisar)

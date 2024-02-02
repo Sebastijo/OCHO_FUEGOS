@@ -29,7 +29,7 @@ class BarraBusqueda:
 
         Args:
             contenedor (tk.Frame or TkinterDnD.Tk): Frame o ventana donde se creará el widget.
-            content (str): Tipo de documento por subir al widget.
+            content (str): Mensaje que se despliega en la barra de búsqueda.
 
         Returns:
             None
@@ -58,7 +58,7 @@ class BarraBusqueda:
             insertbackground="#FFFFFF",  # Cursor de inserción blanco
         )
         self.dragger.insert(
-            "1.0", f"Seleccione un documento como {self.content}"
+            "1.0", f"{self.content}"
         )  # Texto inicial del widget
 
         # Binds

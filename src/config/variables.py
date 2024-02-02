@@ -97,7 +97,7 @@ tarifaDict = {
 }
 
 
-# Keys de los dataframes de ventas (menos liquidación):
+# Keys de los dataframes de ventas (base embarques con facturas proformas):
 key_columns = [
     "CONSIGNATARIO",
     "FACTURA PROFORMA",
@@ -178,18 +178,18 @@ COD_PUERTO_EMBARQUE = {
 # LIQUIDACIONES
 # Diccionario para el main table de liquidacion_reader.py
 main_dict_liq = {
-    "日期\rDate": "FECHA VENTA",  # New
-    "板号\rPallet No.": "FOLIO",  # Old
-    "果园\rCSG": "CSG",  # Old
-    "品种\rVariety": "VARIEDAD",  # Old
-    "大小\rSize": "CALIBRES",  # Old
-    "数量\rQuantity": "CAJAS",  # Old
-    "规格\rSpecification": "KG NET/CAJA",  # Old
-    "价格 (人民币)\rPrice RMB": "RMB/CJ",  # New
-    "总数 (人民币)\rTotal RMB": "TOTAL RMB",  # New
-    "总数 (美金)\rTotal USD": "TOTAL USD",  # New
-    "每箱收益 FOB\rFOB Return": "RETORNO FOB/CJ",  # New
-    "总收益 FOB\rTotal Return": "RETORNO FOB",  # New
+    "日期 Date": "FECHA VENTA",  # New
+    "板号 Pallet No.": "FOLIO",  # Old
+    "果园 CSG": "CSG",  # Old
+    "品种 Variety": "VARIEDAD",  # Old
+    "大小 Size": "CALIBRES",  # Old
+    "数量 Quantity": "CAJAS LIQUIDADAS",  # New
+    "规格 Specification": "KG NET/CAJA",  # Old (Que hago con esto? xD)
+    "价格 (人民币) Price RMB": "RMB/CJ",  # New
+    "总数 (人民币) Total RMB": "TOTAL RMB",  # New
+    "总数 (美金) Total USD": "TOTAL USD",  # New
+    "每箱收益 FOB FOB Return": "RETORNO FOB/CJ",  # New
+    "总收益 FOB Total Return": "RETORNO FOB",  # New
 }
 
 # key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG
