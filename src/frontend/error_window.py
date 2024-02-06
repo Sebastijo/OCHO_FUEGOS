@@ -37,79 +37,32 @@ background = bg["window"]
 foreground = fg["window"]
 
 
-def inputErrorWindow(
-    window: tk.Tk,
-) -> bool:
+def inputErrorWindow(window: tk.Tk, e: Exception):
     """
-    Revisa si se cumplen las condiciones para ejecutar el programa. Si no se cumplen, se ejecuta una ventana de error con la información del error.
-    Eventualmente se tiene que agregar otro input a la función para que pueda revisar si se cumplen las condiciones.
-    Este otro input posiblemente será el utput de la función contol úbicada en el backend control_final.py.
+    Crea una ventana sobre window explicando la excepción e.
 
     Args:
         window (tk.Tk): Ventana principal del programa donde se ejecutará la ventana de error.
+        e (Exception): Excepción que se quiere mostrar en la ventana de error.
 
     Returns:
-        bool: True si se despliega la ventana de error (y no se puede correr el programa), False si no se despliega la ventana de error (y sí se puede correr el programa).
+        None
     """
+    ventana_error = Ventana(titulo="8Fuegos - Error", padre=window)
+    mainFrame_error = ventana_error.mainFrame
 
-    # Lista de condiciones, si todas son Ture, no se ejecuta el errorWindow. Si una es False, se ejecuta el errorWindow.
-    Condicion = [True]  # (Eventualmente) Depende del input de la función
+    label_error_header = tk.Label(
+        mainFrame_error, text="No se pudo ejecutar el programa a causa del siguiente error:", bg=background, fg=foreground, font=font
+    )
+    label_error = tk.Label(
+        mainFrame_error, text=str(e), bg=background, fg=foreground, font=font
+    )
+    label_error_header.pack(padx=30, pady=(30,10))
+    label_error.pack(padx=10, pady=(0,30))
 
-    if not False in Condicion:  # Si no hay errores
-        return False  # No se despliega el error window (y se puede correr el programa)
-
-    else:  # Si se detectan errores
-        # Lista de mensajes de error, cada uno corresponde a una condición de la lista anterior.
-        Outputs = ["<<Mensaje de error a ser presentado en caso de error>>"]
-        for i in range(len(Condicion)):  # Revisa cada condición hasta encontrar error
-            if (
-                Condicion[i] == False
-            ):  # La primera condición falsa que encuentra, se despliega en el errorWindow
-                say = Outputs[i]
-
-                # Cambios de color de botón al pasar el mouse por encima
-                def on_enter_errorButton(event):
-                    errorWindowButton["background"] = "#000D56"
-
-                def on_leave_errorButton(event):
-                    errorWindowButton["background"] = "#001693"
-
-                # Creación de la ventana de error
-                errorWindow = tk.Toplevel(window)
-                errorWindow.title("Error")
-                errorWindow.config(bg=background)
-                errorWindowFrame = tk.Frame(
-                    errorWindow, bd=10, relief=tk.GROOVE, bg=background
-                )
-                errorWindowFrame.pack()
-                errorWindowLabel = tk.Frame(errorWindowFrame, bd=5, bg=background)
-                errorWindowExit = tk.Frame(errorWindowFrame, bd=10, bg=background)
-                errorWindowLabel.pack()
-                errorWindowExit.pack()
-                errorWindow.title("8Fuegos - Error")
-                tk.Label(
-                    errorWindowLabel,
-                    text=say,
-                    wraplength=200,
-                    font=30,
-                    bg=background,
-                    fg="#DDDDDD",
-                ).pack()
-                errorWindowButton = tk.Button(
-                    errorWindowExit,
-                    text="OK",
-                    font=40,
-                    command=errorWindow.destroy,
-                    bg="#001693",
-                    fg="#FFFFFF",
-                    bd=3,
-                    width=10,
-                    cursor="hand2",
-                )
-                errorWindowButton.pack()
-                errorWindowButton.bind("<Enter>", on_enter_errorButton)
-                errorWindowButton.bind("<Leave>", on_leave_errorButton)
-                return True  # Se despliega el errorWindow (y no se puede correr el programa)
+    okButton = Boton(mainFrame_error, "OK", ventana_error.destroy, "output_button")
+    okButton.configure(width=10)
+    okButton.pack(pady=10)
 
 
 def revisarWindow(
@@ -137,7 +90,7 @@ def revisarWindow(
     # Create a Text widget and attach the Scrollbar
     text_widget = tk.Text(mainFrame_revisar, wrap="none", yscrollcommand=scrollbar.set, width=90)
     text_widget.pack(expand=True, fill=tk.BOTH)
-    text_widget.configure(bg=background, fg=foreground, font=("Arial", 12))
+    text_widget.configure(bg=background, fg=foreground, font=font)
 
     noLeidosHeader = "Embarques no leídos:\n\n"
     text_widget.insert(tk.END, noLeidosHeader)
@@ -165,7 +118,7 @@ def revisarWindow(
     okButton.pack(pady=10)
 
 
-# Probamos la función revisarWindow
+# Probamos la función revisarWindow y inputErrorWindow
 if __name__ == "__main__":
     errores_pickle = (
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
@@ -179,8 +132,16 @@ if __name__ == "__main__":
     with open(revisar_pickle, "rb") as file:
         # Load the dictionary from the Pickle file
         revisar = pkl.load(file)
+    e = ValueError("Test error")
 
-    ventana_test = Ventana(titulo="test", ancho=500, alto=500)
+    ventana_test = Ventana(titulo="test")
     root_test = ventana_test.root
-    revisarWindow(root_test, errores, revisar)
-    root_test.mainloop()
+    mainFrame_test = ventana_test.mainFrame
+    revisar_button = Boton(mainFrame_test, "Revisar", lambda: revisarWindow(root_test, errores, revisar), "output_button")
+    error_button = Boton(mainFrame_test, "Error", lambda: inputErrorWindow(root_test, e), "output_button")
+    salir_button = Boton(mainFrame_test, "Salir", ventana_test.destroy, "exit_button")
+    revisar_button.pack()
+    error_button.pack()
+    salir_button.pack()
+
+    mainFrame_test.mainloop()

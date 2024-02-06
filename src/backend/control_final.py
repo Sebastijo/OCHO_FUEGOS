@@ -22,11 +22,9 @@ else:
     from ..backend.embarques import pseudoControl
     from ..backend.liquidacion_reader import liquidaciones
 
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 # Paths to your input files
-embarques_path_ = (
-    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
-)
+embarques_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
 facturas_path_ = (
     r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
 )
@@ -41,18 +39,13 @@ pseudo_control_pickle = (
 liquidacion_pickle = (
     r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\liquidacion.pkl"
 )
-errores_pickle = (
-    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
-)
+errores_pickle = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
 
-revisar_pickle = (
-    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\revisar.pkl"
-)
+revisar_pickle = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\revisar.pkl"
 
 # Variables globales
 key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
-
 
 
 def control(
@@ -80,6 +73,7 @@ def control(
         AssertionError: Si alguno de los paths de embarques_path, facturas_path, tarifa_path no es un archivo.
         AssertionError: Si el path de liquidaciones_path no es un directorio.
     """
+
     if (
         # __name__ == "__main__" and
         embarques_path == embarques_path_
@@ -90,7 +84,9 @@ def control(
         if os.path.exists(pseudo_control_pickle):
             pseudo_control = pd.read_pickle(pseudo_control_pickle)
         else:
-            pseudo_control = pseudoControl(embarques_path, facturas_path, tarifa_path)
+            pseudo_control, _ = pseudoControl(
+                embarques_path, facturas_path, tarifa_path
+            )
             pseudo_control.to_pickle(pseudo_control_pickle)
 
         if os.path.exists(liquidacion_pickle):
@@ -108,7 +104,7 @@ def control(
             _, errores, _ = liquidaciones(liquidaciones_path)
             with open(errores_pickle, "wb") as file:
                 pkl.dump(errores, file)
-        
+
         if os.path.exists(revisar_pickle):
             with open(revisar_pickle, "rb") as file:
                 revisar = pkl.load(file)
@@ -119,16 +115,21 @@ def control(
 
     else:
         for input in [embarques_path, facturas_path, tarifa_path, liquidaciones_path]:
-            assert type(input) == str, f"The file path '{input}' is not a string."
-            assert os.path.exists(input), f"The file '{input}' does not exist."
+            assert (
+                type(input) == str
+            ), f"La ruta del archivo '{input}' no es una cadena de texto."
+            assert os.path.exists(input), f"La ruta del archivo '{input}' no existe."
             if input == liquidaciones_path:
-                assert os.path.isdir(
-                    input
-                ), f"'{input}' is not a directory; it may be a file."
+                assert os.path.isdir(input) or input.lower().endswith(
+                    (".pdf")
+                ), f"'{input}' no es una carpeta ni un archivo de PDF."
             else:
                 assert os.path.isfile(
                     input
-                ), f"'{input}' is not a file; it may be a directory."
+                ), f"'{input}' no es una archivo; puede que sea una carpeta."
+                assert input.lower().endswith(
+                    (".xlsx", ".xls")
+                ), f"El archivo '{input}' no es un archivo de Excel."
 
         pseudo_control = pseudoControl(embarques_path, facturas_path, tarifa_path)
         liquidacion, errores, revisar = liquidaciones(liquidaciones_path)
@@ -164,47 +165,78 @@ def control(
         else:
             liq_sin_CSG.append(embarques.main)
 
-    # Concatenamos las liquidaciones con y sin CSG
-    liquidacion_con_CSG = pd.concat(liq_con_CSG)
-    liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
+    # Si no hay liquidaciones con CSG o sin CSG, entonces el control final es el pseudo control con las columnas de liquidación vacías.
+    if len(liq_sin_CSG) + len(liq_con_CSG) == 0:
+        control_df = pseudo_control
+        for column in [
+            "FECHA VENTA",
+            "FOLIO",
+            "CSG",
+            "VARIEDAD",
+            "CALIBRES",
+            "CAJAS LIQUIDADAS",
+            "RMB/CJ",
+            "TOTAL RMB",
+            "TOTAL USD",
+            "RETORNO FOB/CJ",
+            "RETORNO FOB",
+            "COSTO",
+            "COSTO/CJ",
+            "COSTO/KG",
+            "COMISION",
+            "COMISION/CJ",
+            "COMISION/KG",
+            "COSTO Y COMISION",
+            "LIQ FINAL",
+        ]:
+            control_df[column] = None
+    else:
+        # Concatenamos las liquidaciones con y sin CSG
+        if len(liq_con_CSG) > 0:
+            liquidacion_con_CSG = pd.concat(liq_con_CSG)
+            control_df = pseudo_control.merge(
+            liquidacion_con_CSG,
+            how="left",
+            on=key_liq,
+            )
+        if len(liq_sin_CSG) > 0:
+            liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
+            control_df = control_df.merge(
+            liquidacion_sin_CSG,
+            how="left",
+            on=key_liq_incompleto,
+            suffixes=("_con", "_sin"),
+            )
 
-    # Juntamos las liquidaciones con y sin CSG con el pseudo control
-    control_df = pseudo_control.merge(
-        liquidacion_con_CSG,
-        how="left",
-        on=key_liq,
+        # Juntamos las columnas duplicadas
+        sin_list = [
+            columnSin for columnSin in control_df.columns if columnSin.endswith("_sin")
+        ]
+        con_list = [
+            columnCon for columnCon in control_df.columns if columnCon.endswith("_con")
+        ]
+        for columnSin, columnCon in zip(sin_list, con_list):
+            assert columnSin.rstrip("_sin") == columnCon.rstrip(
+                "_con"
+            ), f"Se intentó emparejar las columnas {columnSin} y {columnCon} pero estas no coinciden."
+            column = columnSin.rstrip("_sin")
+            pair = control_df[[columnSin, columnCon]]
+            assert (
+                pair.isnull().any(axis=1).all()
+            ), f"Hay un elemento en las liquidaciones que aparece dos veces: una vez con columna CSG y otra con columna CSG."
+            control_df.drop(columns=[columnSin, columnCon], inplace=True)
+            control_df[column] = pair.apply(
+                lambda row: (
+                    row[columnSin] if pd.isnull(row[columnCon]) else row[columnCon]
+                ),
+                axis=1,
+            )
+
+    return (
+        control_df,
+        errores,
+        revisar,
     )
-
-    control_df = control_df.merge(
-        liquidacion_sin_CSG,
-        how="left",
-        on=key_liq_incompleto,
-        suffixes=("_con", "_sin"),
-    )
-
-    # Juntamos las columnas diplicadas
-    sin_list = [
-        columnSin for columnSin in control_df.columns if columnSin.endswith("_sin")
-    ]
-    con_list = [
-        columnCon for columnCon in control_df.columns if columnCon.endswith("_con")
-    ]
-    for columnSin, columnCon in zip(sin_list, con_list):
-        assert columnSin.rstrip("_sin") == columnCon.rstrip(
-            "_con"
-        ), f"Se intentó emparejar las columnas {columnSin} y {columnCon} pero estas no coinciden."
-        column = columnSin.rstrip("_sin")
-        pair = control_df[[columnSin, columnCon]]
-        assert (
-            pair.isnull().any(axis=1).all()
-        ), f"Tanto la columna {columnSin} como la columna {columnCon} tienen información en un elemento."
-        control_df.drop(columns=[columnSin, columnCon], inplace=True)
-        control_df[column] = pair.apply(
-            lambda row: row[columnSin] if pd.isnull(row[columnCon]) else row[columnCon],
-            axis=1,
-        )
-
-    return control_df, errores, revisar
 
 
 if __name__ == "__main__":

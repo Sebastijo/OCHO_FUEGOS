@@ -63,10 +63,10 @@ def import_and_group(liquidacion: str) -> tuple[list, list]:
         AssertionError: If the number of tables in a page is not 1 or >= 3
         AssertionError: If the embarque index is not correct: In each cycle, it should be the last index of embarques or the last index of embarques plus 1
     """
-    assert os.path.exists(liquidacion), f"The path {liquidacion} does not exist."
+    assert os.path.exists(liquidacion), f"La ruta del archivo {liquidacion} no existe."
     assert os.path.isfile(liquidacion) and liquidacion.lower().endswith(
         ".pdf"
-    ), f"The file at {liquidacion} is not a PDF file."
+    ), f"El archivo en {liquidacion} no es un archivo PDF."
 
     embarques = []  # Lista de todos los embarques
     paginas_list = (
@@ -97,7 +97,7 @@ def import_and_group(liquidacion: str) -> tuple[list, list]:
                 assert (
                     str(e)
                     == "java.lang.IndexOutOfBoundsException: Page number does not exist."
-                ), f"El error de lectura del PDF no es por falta de páginas!: {e}"
+                ), f"Error de lecutra del PDF de liquidacion {liquidacion}: {e}"
                 pages_left = False
                 break
 
@@ -117,7 +117,7 @@ def import_and_group(liquidacion: str) -> tuple[list, list]:
             cardinality = len(tables_in_page)  # Cantidad de tables en la hoja
             assert (
                 cardinality >= 3 or cardinality == 1
-            ), f"La cantidad de tablas en la página no es correcta. Las tablas en {liquidacion} son: {tables_in_page}"
+            ), f"La cantidad de tablas en la página {page} del archivo {liquidacion} no es correcta; deberían srer una o más que tres."
             if (
                 cardinality >= 3
             ):  # Si es la última página de embarque, cambiamos de embarque
@@ -433,7 +433,7 @@ def embarques_three_tables(
 
     assert len(embarques_) + len(errores) == len(
         embarques
-    ), "Se perdieron embarques en el camino"
+    ), "Se perdieron embarques en el procesamiento"
 
     return embarques_, errores, paginas_
 
@@ -523,7 +523,7 @@ def liquidaciones(folder: str) -> tuple[list, dict, dict]:
         AssertionError: If the path is not a PDF file
     """
 
-    assert os.path.exists(folder), f"The path {folder} does not exist."
+    assert os.path.exists(folder), f"La ruta del archivo {folder} no existe."
 
     # Creamos la lista de embarques y de errores
     embarques = []
@@ -554,7 +554,7 @@ def liquidaciones(folder: str) -> tuple[list, dict, dict]:
         for liquidacion in os.listdir(folder):
             procesarLiquidacionYAlmacenarDatos(liquidacion)
     else:
-        assert os.path.isfile(folder), f"The path {folder} is not a file or a folder."
+        assert os.path.isfile(folder), f"La ruta del archivo {folder} no es un archivo ni una carpeta."
         procesarLiquidacionYAlmacenarDatos(folder)
 
     assert len(ubicaciones) == len(

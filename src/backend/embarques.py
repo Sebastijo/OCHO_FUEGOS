@@ -9,7 +9,6 @@ Librerías:
 - pandas: 2.2.0
 """
 
-
 # Importamos paquetes
 import pandas as pd
 from datetime import datetime
@@ -57,6 +56,84 @@ if __name__ == "__main__":
     )
 
 
+def import_and_check(
+    embarques_path: str, facturas_path: str, tarifa_path: str
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Function to be called in pseudoControl with the objective of importing and cheking the validity of the inputted Excel files
+    Returns a tuple with the following coordinates:
+
+    0) embarques: pd.DataFrame
+    1) facturas: pd.DataFrame
+    2) tarifa: pd.DataFrame
+
+    Args:
+        embarques_path (str): Path to the embarques Excel file.
+        facturas_path (str): Path to the facturas Excel file.
+        tarifa_path (str): Path to the tarifa Excel file.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]: Tuple with the dataframes and an error message.
+    """
+    try:
+        if (
+            __name__ == "__main__"
+            and embarques_path == embarques_path_
+            and facturas_path == facturas_path_
+            and tarifa_path == tarifa_path_
+        ):
+            # Load or create and save pickled files
+            if os.path.exists(embarques_pickle):
+                embarques = pd.read_pickle(embarques_pickle)
+            else:
+                embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
+                embarques.to_pickle(embarques_pickle)
+
+            if os.path.exists(facturas_pickle):
+                facturas = pd.read_pickle(facturas_pickle)
+            else:
+                facturas = pd.read_excel(
+                    facturas_path, sheet_name="BillsRows", dtype=str
+                )
+                facturas.to_pickle(facturas_pickle)
+
+            if os.path.exists(tarifa_pickle):
+                tarifa = pd.read_pickle(tarifa_pickle)
+            else:
+                tarifa = pd.read_excel(
+                    tarifa_path, sheet_name="Instructives", dtype=str
+                )
+                tarifa.to_pickle(tarifa_pickle)
+        else:
+            embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
+            facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
+            tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
+    except Exception as e:
+        raise ValueError(
+            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas. El error encontrado es: {e}"
+        )
+
+    # Revisamos las columnas de embarques
+    embarques_difference = set(embarquesDict.keys()) - set(embarques.columns)
+    assert (
+        embarques_difference == set()
+    ), f"La(s) columna(s) {embarques_difference} no se encuentra(n) en el archivo de base embarques."
+
+    # Revisamos las columnas de facturas
+    facturas_difference = set(facturasDict.keys()) - set(facturas.columns)
+    assert (
+        facturas_difference == set()
+    ), f"La(s) columna(s) {facturas_difference} no se encuentra(n) en el archivo de facturas."
+
+    # Revisamos las columnas de tarifa
+    tarifa_difference = set(tarifaDict.keys()) - set(tarifa.columns)
+    assert (
+        tarifa_difference == set()
+    ), f"La(s) columna(s) {tarifa_difference} no se encuentra(n) en el archivo de tarifa."
+
+    return embarques, facturas, tarifa
+
+
 def pseudoControl(
     embarques_path: str, facturas_path: str, tarifa_path: str
 ) -> pd.DataFrame:
@@ -72,40 +149,20 @@ def pseudoControl(
         pd.DataFrame: Dataframe de control de embarques.
     """
     for file_path in [embarques_path, facturas_path, tarifa_path]:
-        assert type(file_path) == str, f"The file path '{file_path}' is not a string."
-        assert os.path.exists(file_path), f"The file '{file_path}' does not exist."
+        assert (
+            type(file_path) == str
+        ), f"La ruta del archivo '{file_path}' no es una cadena de texto."
+        assert os.path.exists(
+            file_path
+        ), f"La ruta del archivo '{file_path}' no existe."
         assert os.path.isfile(
             file_path
-        ), f"'{file_path}' is not a file; it may be a directory."
+        ), f"'{file_path}' no es un archivo; puede que sea una carpeta."
 
-    if (
-        __name__ == "__main__"
-        and embarques_path == embarques_path_
-        and facturas_path == facturas_path_
-        and tarifa_path == tarifa_path_
-    ):
-        # Load or create and save pickled files
-        if os.path.exists(embarques_pickle):
-            embarques = pd.read_pickle(embarques_pickle)
-        else:
-            embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
-            embarques.to_pickle(embarques_pickle)
-
-        if os.path.exists(facturas_pickle):
-            facturas = pd.read_pickle(facturas_pickle)
-        else:
-            facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
-            facturas.to_pickle(facturas_pickle)
-
-        if os.path.exists(tarifa_pickle):
-            tarifa = pd.read_pickle(tarifa_pickle)
-        else:
-            tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
-            tarifa.to_pickle(tarifa_pickle)
-    else:
-        embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
-        facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
-        tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
+    # importamos y revisamos los archivos
+    embarques, facturas, tarifa = import_and_check(
+        embarques_path, facturas_path, tarifa_path
+    )
 
     # Traducimos
     embarques.rename(
@@ -121,9 +178,7 @@ def pseudoControl(
     tarifa = tarifa[list(tarifaDict.values())]
 
     # Agregamos los Freight Costs a embarques
-    embarques = pd.merge(
-        embarques, tarifa, on="INSTRUCTIVO", how="left"
-    )  # Columnas de tamaño 3 000
+    embarques = pd.merge(embarques, tarifa, on="INSTRUCTIVO", how="left")
 
     # Definimos las keys de los dataframes
     embarques["key"] = embarques.apply(lambda row: tuple(row[key_columns]), axis=1)
@@ -176,9 +231,9 @@ def pseudoControl(
     ).dt.days  # Calculamos los días transcurridos mediante tiempo final menos tiempo inicial
 
     control["ESTATUS EMBARQUE"] = control["ETA REAL"].apply(
-        lambda x: "ARRIBADO"
-        if pd.notna(x) and x.date() < fecha_actual
-        else "EN TRANSITO"
+        lambda x: (
+            "ARRIBADO" if pd.notna(x) and x.date() < fecha_actual else "EN TRANSITO"
+        )
     )  # Definimos el estatus del embarque (ARRIBADO o EN TRANSITO)
 
     control["RECLAMADO"] = None  # Columan vacía
@@ -266,9 +321,10 @@ def pseudoControl(
 
 
 if __name__ == "__main__":
-    control = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
+    control, errores = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
 
     print("Control de embarques (sin liquidaciones):")
     print(control)
+    print(errores)
 
     print("Observación:", "Falta la parte en rojo en la referencia")

@@ -71,6 +71,7 @@ def runVentas() -> dict:
     """
     Función que se ejecuta al presionar el botón de ejecución.
     """
+    
     # Guardamos los paths de los archivos seleccionados
     inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
     for tipo in barrasBusqueda:
@@ -89,63 +90,57 @@ def runVentas() -> dict:
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx"
     )
 
-    if not inputErrorWindow(
-        root
-    ):  # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
-        frameFinalButtons.grid_forget()  # Borramos los botones finales
+    # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
+    frameFinalButtons.grid_forget()  # Borramos los botones finales
 
-        # Creamos el Excel de output
-        if os.path.exists(control_path):  # Si el archivo existe, lo borramos
-            os.remove(control_path)
-        writer = pd.ExcelWriter(control_path, engine="xlsxwriter")
+    # Creamos el Excel de output
+    if os.path.exists(control_path):  # Si el archivo existe, lo borramos
+        os.remove(control_path)
+    writer = pd.ExcelWriter(control_path, engine="xlsxwriter")
 
-        # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
-        # the default header and skip one row to allow us to insert a user defined
-        # header. Also remove index values by index=False
-        control_df.to_excel(
-            writer, sheet_name="Sheet1", startrow=1, header=False, index=False
+    # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
+    # the default header and skip one row to allow us to insert a user defined
+    # header. Also remove index values by index=False
+    control_df.to_excel(
+        writer, sheet_name="Sheet1", startrow=1, header=False, index=False
+    )
+
+    workbook = writer.book
+    worksheet = writer.sheets["Sheet1"]
+    # Add a header format.
+    header_format = workbook.add_format(
+        {"bold": True, "fg_color": "#6FAAFF", "border": 1}
+    )
+    for col_num, value in enumerate(control_df.columns.values):
+        worksheet.write(0, col_num, value, header_format)
+
+        column_len = control_df[value].astype(str).str.len().max()
+        # Setting the length if the column header is larger
+        # than the max column value length
+        column_len = max(column_len, len(value)) + 3
+        # set the column length
+        worksheet.set_column(col_num, col_num, column_len)
+
+    # Close the Pandas Excel writer and output the Excel file.
+    writer.close()
+    # Cambiamos el texto de los outputs
+    output[0].configure(
+        text=f"El resultado se encuentra disponible en\r {control_path}"
+    )
+    num_errores = sum(len(definition) for definition in errores.values())
+    num_revisar = len(revisar)
+    if num_errores + num_revisar == 0:
+        output[1].configure(text="No se detectaron errores en la ejecución")
+    else:
+        output[1].configure(
+            text=f"Hubo {num_errores} embarques cuya liquidación no se pudo leer\r y {num_revisar} embarques cuyas liquidaciones tienen inconsistencias"
         )
-
-        workbook = writer.book
-        worksheet = writer.sheets["Sheet1"]
-        # Add a header format.
-        header_format = workbook.add_format(
-            {"bold": True, "fg_color": "#6FAAFF", "border": 1}
-        )
-        for col_num, value in enumerate(control_df.columns.values):
-            worksheet.write(0, col_num, value, header_format)
-
-            column_len = control_df[value].astype(str).str.len().max()
-            # Setting the length if the column header is larger
-            # than the max column value length
-            column_len = max(column_len, len(value)) + 3
-            # set the column length
-            worksheet.set_column(col_num, col_num, column_len)
-
-        # Close the Pandas Excel writer and output the Excel file.
-        writer.close()
-        # Cambiamos el texto de los outputs
-        output[0].configure(
-            text=f"El resultado se encuentra disponible en\r {control_path}"
-        )
-        num_errores = sum(len(definition) for definition in errores.values())
-        num_revisar = len(revisar)
-        if num_errores + num_revisar == 0:
-            output[1].configure(text="No se detectaron errores en la ejecución")
-        else:
-            output[1].configure(
-                text=f"Hubo {num_errores} embarques cuya liquidación no se pudo leer\r y {num_revisar} embarques cuyas liquidaciones tienen inconsistencias"
-            )
-            output[-1].pack(padx=10, pady=(10, 10))
-            output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
-        outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
-        frameFinalButtons.grid(
-            row=2, column=0, sticky=tk.E
-        )  # Mostramos los botones finales
-        return
-    else:  # Se detectan errores
-        return
-
+        output[-1].pack(padx=10, pady=(10, 10))
+        output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
+    outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
+    frameFinalButtons.grid(
+        row=2, column=0, sticky=tk.E
+    )  # Mostramos los botones finales
 
 # Creamos el contenido de los outputs:
 outputFrame = tk.Frame(

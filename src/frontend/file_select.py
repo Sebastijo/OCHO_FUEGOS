@@ -16,7 +16,10 @@ import tkinter as tk
 from tkinterdnd2 import *
 
 # modulos propios
-from ..config import variables as var
+if __name__ == "__main__":
+    import src.config.variables as var
+else:
+    from ..config import variables as var
 
 # Variables universales:
 background = var.bg["window"]
@@ -57,9 +60,7 @@ class BarraBusqueda:
             highlightthickness=1,
             insertbackground="#FFFFFF",  # Cursor de inserción blanco
         )
-        self.dragger.insert(
-            "1.0", f"{self.content}"
-        )  # Texto inicial del widget
+        self.dragger.insert("1.0", f"{self.content}")  # Texto inicial del widget
 
         # Binds
         self.dragger.bind(
@@ -130,10 +131,10 @@ def get_path(event):
 # Función para manejar el comportamiento predeterminado al enfocar el cuadro de entrada
 def default_dragger(event, content):
     current = event.widget.get("1.0", tk.END)
-    if current == f"Seleccione un documento como {content}\n":
+    if current == content + "\n":
         event.widget.delete("1.0", tk.END)
     elif current == "\n":
-        event.widget.insert(tk.END, f"Seleccione un documento como {content}")
+        event.widget.insert(tk.END, content)
 
 
 # Animaciones de buton "Examinar..."
@@ -146,18 +147,24 @@ def on_leave_examinar(event):
 
 
 def browsefunc(text: tk.Widget) -> None:
-    filename = tk.filedialog.askopenfilename(filetypes=[("Excel", "*.xlsx *.xls")])
+    file_types = [
+        ("All Files", "*.*"),
+        ("Excel Files", "*.xlsx;*.xls"),
+        ("PDF Files", "*.pdf"),
+    ]
+    filename = tk.filedialog.askopenfilename(filetypes=file_types)
     text.delete("1.0", tk.END)
     text.insert(tk.END, filename)
 
 
+# Probamos la clase BarraBusqueda
 if __name__ == "__main__":
-    # Crear la ventana principal de la aplicación
-    root = TkinterDnD.Tk()
-    root.title("Obtener ruta del archivo")
+    from src.frontend.ventana import Ventana
 
-    barraBusqueda = BarraBusqueda(root)
-    barraBusqueda.pack()
-
-    # Iniciar el bucle principal de la aplicación
-    root.mainloop()
+    ventana_test = Ventana("Test", DnD=True)
+    mainFrame_test = ventana_test.mainFrame
+    barra1 = BarraBusqueda(mainFrame_test, "Seleccione un archivo .xls de embarques")
+    barra2 = BarraBusqueda(mainFrame_test, "Seleccione un archivo .xls de facturas")
+    barra1.pack()
+    barra2.pack()
+    ventana_test.mainloop()
