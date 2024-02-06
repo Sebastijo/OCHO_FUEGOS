@@ -20,7 +20,7 @@ bg = {
     "window_text": "#000739",
 }
 bg_on_enter = {"?": "#FCFF45", "output_button": "#000D56", "exit_button": "#6B0000"}
-fg = {"output_button": "#FFFFFF", "exit_button": "#FFFFFF", "window_text": "#DDDDDD"}
+fg = {"window": "#DDDDDD","output_button": "#FFFFFF", "exit_button": "#FFFFFF", "window_text": "#DDDDDD"}
 activebackground = {"output_button": "#DDDDDD", "exit_button": "#DDDDDD"}
 activeforeground = fg
 font = {"?": 8, "output_button": 40, "exit_button": 40}

@@ -47,13 +47,13 @@ if __name__ == "__main__":
 
     # Pickle files for each DataFrame
     embarques_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\embarques_dataframe.pkl"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\embarques_dataframe.pkl"
     )
     facturas_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_dataframe.pkl"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\facturas_dataframe.pkl"
     )
     tarifa_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_dataframe.pkl"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\tarifa_dataframe.pkl"
     )
 
 

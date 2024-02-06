@@ -11,9 +11,17 @@ Librerías:
 
 # Importamos paquetes
 import tkinter as tk
+import pickle as pkl
 
 # modulos propios
-from ..config import variables as var
+if __name__ == "__main__":
+    import src.config.variables as var
+    from src.frontend.ventana import Ventana
+    from src.frontend.buttons import Boton
+else:
+    from ..config import variables as var
+    from .ventana import Ventana
+    from .buttons import Boton
 
 
 # Variables globales
@@ -23,11 +31,13 @@ email = var.email
 bg = var.bg
 font = var.font
 bg_on_enter = var.bg_on_enter
+fg = var.fg
 
 background = bg["window"]
+foreground = fg["window"]
 
 
-def errorWindow(
+def inputErrorWindow(
     window: tk.Tk,
 ) -> bool:
     """
@@ -101,3 +111,76 @@ def errorWindow(
                 errorWindowButton.bind("<Leave>", on_leave_errorButton)
                 return True  # Se despliega el errorWindow (y no se puede correr el programa)
 
+
+def revisarWindow(
+    window: tk.Tk, embarques_no_leidos: dict, embarques_con_inconsistencias: dict
+):
+    """
+    Despliega una ventana con los errores que debe revisar el usuario.
+
+    Args:
+        window (tk.Tk): Ventana principal del programa donde se ejecutará la ventana de error.
+        embarques_no_leidos (dict): Diccionario con los embarques que no se pudieron leer.
+        embarques_con_inconsistencias (dict): Lista con los embarques que tienen inconsistencias.
+
+    Returns:
+        None
+    """
+    ventana_revisar = Ventana(titulo="8Fuegos - Reporte de errores", padre=window)
+    root_revisar = ventana_revisar.root
+    mainFrame_revisar = ventana_revisar.mainFrame
+
+    # Create a Scrollbar
+    scrollbar = tk.Scrollbar(mainFrame_revisar)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Create a Text widget and attach the Scrollbar
+    text_widget = tk.Text(mainFrame_revisar, wrap="none", yscrollcommand=scrollbar.set, width=90)
+    text_widget.pack(expand=True, fill=tk.BOTH)
+    text_widget.configure(bg=background, fg=foreground, font=("Arial", 12))
+
+    noLeidosHeader = "Embarques no leídos:\n\n"
+    text_widget.insert(tk.END, noLeidosHeader)
+    embarques_no_leidos = {
+        key: ", ".join(f"p. {num}" for num in value)
+        for key, value in embarques_no_leidos.items()
+        if value != []
+    }
+    for key, value in embarques_no_leidos.items():
+        text_widget.insert(tk.END, "\t" + key + ": " + value + "\n")
+
+    inconsistenciasHeader = "\n Embarques con inconsistencias:\n"
+    text_widget.insert(tk.END, inconsistenciasHeader)
+    for key in embarques_con_inconsistencias.keys():
+        text_widget.insert(tk.END, "\n\t" + str(key[0])+ ", p." + str(key[1]) + "\n")
+        for value in embarques_con_inconsistencias[key]:
+            text_widget.insert(tk.END, "\t" + "- " + value + "\n")
+
+    text_widget.config(state=tk.DISABLED)
+    # Configure the Scrollbar to work with the Text widget
+    scrollbar.config(command=text_widget.yview)
+
+    okButton = Boton(mainFrame_revisar, "OK", ventana_revisar.destroy, "output_button")
+    okButton.configure(width=10)
+    okButton.pack(pady=10)
+
+
+# Probamos la función revisarWindow
+if __name__ == "__main__":
+    errores_pickle = (
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
+    )
+    revisar_pickle = (
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\revisar.pkl"
+    )
+    with open(errores_pickle, "rb") as file:
+        # Load the dictionary from the Pickle file
+        errores = pkl.load(file)
+    with open(revisar_pickle, "rb") as file:
+        # Load the dictionary from the Pickle file
+        revisar = pkl.load(file)
+
+    ventana_test = Ventana(titulo="test", ancho=500, alto=500)
+    root_test = ventana_test.root
+    revisarWindow(root_test, errores, revisar)
+    root_test.mainloop()

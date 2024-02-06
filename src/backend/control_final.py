@@ -22,36 +22,37 @@ else:
     from ..backend.embarques import pseudoControl
     from ..backend.liquidacion_reader import liquidaciones
 
-if __name__ == "__main__":
-    # Paths to your input files
-    embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
-    )
-    facturas_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
-    )
-    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
+#if __name__ == "__main__":
+# Paths to your input files
+embarques_path_ = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
+)
+facturas_path_ = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
+)
+tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
 
-    liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
+liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
-    # Picle location
-    pseudo_control_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\pseudo_control.pkl"
-    )
-    liquidacion_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\liquidacion.pkl"
-    )
-    errores_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
-    )
+# Picle location
+pseudo_control_pickle = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\pseudo_control.pkl"
+)
+liquidacion_pickle = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\liquidacion.pkl"
+)
+errores_pickle = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\errores.pkl"
+)
 
-    revisar_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\revisar.pkl"
-    )
+revisar_pickle = (
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\revisar.pkl"
+)
 
 # Variables globales
 key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
+
 
 
 def control(
@@ -80,8 +81,8 @@ def control(
         AssertionError: Si el path de liquidaciones_path no es un directorio.
     """
     if (
-        __name__ == "__main__"
-        and embarques_path == embarques_path_
+        # __name__ == "__main__" and
+        embarques_path == embarques_path_
         and facturas_path == facturas_path_
         and tarifa_path == tarifa_path_
         and liquidaciones_path == liquidaciones_path_

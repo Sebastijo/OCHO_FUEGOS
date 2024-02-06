@@ -24,15 +24,18 @@ if __name__ == "__main__":
     from src.frontend.buttons import Boton
     import src.config.variables as var
     from src.frontend.info_window import InfoBoton
-    from src.frontend.error_window import errorWindow
+    from src.frontend.error_window import inputErrorWindow, revisarWindow
     from src.backend.control_final import control
+    from src.frontend.ventana import Ventana
 else:
     from .file_select import BarraBusqueda
     from .buttons import Boton
     from ..config import variables as var
     from .info_window import InfoBoton
-    from .error_window import errorWindow
+    from .error_window import inputErrorWindow, revisarWindow
     from ..backend.control_final import control
+    from .ventana import Ventana
+
 
 # Variables universales:
 bg = var.bg  # Color de fondo
@@ -40,16 +43,9 @@ fg = var.fg  # Color de texto
 title = var.title  # Título de la ventana principal
 
 # Creación de la ventana principal utilizando tkinter
-root = TkinterDnD.Tk()
-
-root.config(bg=bg["window"])
-
-# Establecimiento del título de la ventana principal
-root.title(title["main"])
-
-# Creación del marco principal con propiedades específicas
-mainFrame = tk.Frame(root, bd=10, relief=tk.GROOVE, bg=bg["window"])
-mainFrame.pack()
+ventana = Ventana(titulo=title["main"], DnD=True)
+root = ventana.root
+mainFrame = ventana.mainFrame
 
 frameBusquedas = tk.Frame(mainFrame, bd=4, relief=tk.FLAT, bg=bg["window"])
 frameBusquedas.grid(row=0, column=0)
@@ -93,7 +89,7 @@ def runVentas() -> dict:
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx"
     )
 
-    if not errorWindow(
+    if not inputErrorWindow(
         root
     ):  # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtons.grid_forget()  # Borramos los botones finales
@@ -140,6 +136,8 @@ def runVentas() -> dict:
             output[1].configure(
                 text=f"Hubo {num_errores} embarques cuya liquidación no se pudo leer\r y {num_revisar} embarques cuyas liquidaciones tienen inconsistencias"
             )
+            output[-1].pack(padx=10, pady=(10, 10))
+            output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
         outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
         frameFinalButtons.grid(
             row=2, column=0, sticky=tk.E
@@ -159,8 +157,14 @@ for i in range(2):
         tk.Label(outputFrame, width=81, bg=bg["window_text"], fg=fg["window_text"])
     )
     output[i].pack()
-# output.append(Boton(outputFrame, "Revisar problemas", lambda: ))
-
+output.append(
+    Boton(
+        outputFrame,
+        "Reporte de errores",
+        lambda: print("por revisar:"),
+        "output_button",
+    )
+)
 
 # Creación de los botones finales de output y de exit.
 frameFinalButtons = tk.Frame(mainFrame, bd=4, bg=bg["window"])
