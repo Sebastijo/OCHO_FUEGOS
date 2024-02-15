@@ -18,7 +18,6 @@ from tkinterdnd2 import *
 import pandas as pd
 from xlsxwriter.workbook import Workbook
 import os
-import sys
 import threading
 
 # modulos propios

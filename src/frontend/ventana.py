@@ -21,8 +21,9 @@ else:
 bg = var.bg
 fg = var.fg
 
+
 class Ventana:
-    def __init__(self, titulo = "", ancho = 0, alto = 0, padre = False, DnD = False) -> None:
+    def __init__(self, titulo="", ancho=0, alto=0, padre=False, DnD=False) -> None:
         """
         Inicializa una instancia de la clase Ventana.
 
@@ -37,7 +38,7 @@ class Ventana:
         Returns:
             None
 
-        Raises: 
+        Raises:
             AssertionError: Si el título no es un string.
             AssertionError: Si el ancho no es un entero.
             AssertionError: Si el alto no es un entero.
@@ -48,7 +49,9 @@ class Ventana:
         assert type(titulo) == str, "El título debe ser un string."
         assert type(ancho) == int, "El ancho debe ser un entero."
         assert type(alto) == int, "El alto debe ser un entero."
-        assert type(padre) in [tk.Tk, TkinterDnD.Tk] or padre == False, "El padre debe ser una instancia de tk.Tk o False."
+        assert (
+            type(padre) in [tk.Tk, TkinterDnD.Tk] or padre == False
+        ), "El padre debe ser una instancia de tk.Tk o False."
         assert type(DnD) == bool, "DnD debe ser un booleano."
         assert ancho >= 0, "El ancho debe ser mayor a 0."
         assert alto >= 0, "El alto debe ser mayor a 0."
@@ -60,7 +63,9 @@ class Ventana:
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):
                     self.root.geometry(f"{ancho}x{alto}")
-                self.mainFrame = tk.Frame(self.root, bd=10, relief=tk.GROOVE, bg=bg["window"])
+                self.mainFrame = tk.Frame(
+                    self.root, bd=10, relief=tk.GROOVE, bg=bg["window"]
+                )
                 self.mainFrame.pack()
             else:
                 self.root = tk.Toplevel(padre)
@@ -68,7 +73,9 @@ class Ventana:
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):
                     self.root.geometry(f"{ancho}x{alto}")
-                self.mainFrame = tk.Frame(self.root, bd=10, relief=tk.GROOVE, bg=bg["window"])
+                self.mainFrame = tk.Frame(
+                    self.root, bd=10, relief=tk.GROOVE, bg=bg["window"]
+                )
                 self.mainFrame.pack()
         else:
             if padre == False:
@@ -77,7 +84,9 @@ class Ventana:
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):
                     self.root.geometry(f"{ancho}x{alto}")
-                self.mainFrame = tk.Frame(self.root, bd=10, relief=tk.GROOVE, bg=bg["window"])
+                self.mainFrame = tk.Frame(
+                    self.root, bd=10, relief=tk.GROOVE, bg=bg["window"]
+                )
                 self.mainFrame.pack()
             else:
                 self.root = TkinterDnD.Toplevel(padre)
@@ -85,9 +94,11 @@ class Ventana:
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):
                     self.root.geometry(f"{ancho}x{alto}")
-                self.mainFrame = tk.Frame(self.root, bd=10, relief=tk.GROOVE, bg=bg["window"])
+                self.mainFrame = tk.Frame(
+                    self.root, bd=10, relief=tk.GROOVE, bg=bg["window"]
+                )
                 self.mainFrame.pack()
-    
+
     def destroy(self) -> None:
         """
         Cierra la ventana.
@@ -117,9 +128,8 @@ class Ventana:
             None
         """
         self.root.config(**kwargs)
-    
 
-    
+
 if __name__ == "__main__":
     v = Ventana("Ventana de prueba", 500, 500)
     v.mainloop()

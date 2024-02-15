@@ -70,10 +70,10 @@ def infoWindow(info: str, window: tk.Tk) -> None:
     datosLabel2 = tk.Label(
         datosFrame, text=telefono + " (WhatsApp)", bg=background, fg="#DDDDDD", bd=0
     )
-    datosLabel3 = tk.Label(
-        datosFrame, text=email, bg=background, fg="#DDDDDD", bd=0
+    datosLabel3 = tk.Label(datosFrame, text=email, bg=background, fg="#DDDDDD", bd=0)
+    ESPACIOXD = tk.Label(
+        exitFrame, text="asdasdasdasdasdasdasdas", bg=background, fg=background
     )
-    ESPACIOXD = tk.Label(exitFrame, text="asdasdasdasdasdasdasdas", bg=background, fg=background)
     # errorWindowExit   = tk.Frame(exitFrame, bd=10, bg = background)
     errorWindowLabel.pack()
     datosFrame.grid(column=1, row=1)

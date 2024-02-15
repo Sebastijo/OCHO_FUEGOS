@@ -115,20 +115,22 @@ if __name__ == "__main__":
     liquidaciones_inconsistencias = []
     for liquidacion in liquidaciones:
         idx = liquidacion.location
-        #try:
+        # try:
         (hay_inconsistencias, _) = revisar_liquidacion(liquidacion)
         if hay_inconsistencias:
             liquidaciones_inconsistencias.append(idx)
-        #except Exception as e:
-            #print(f"La función tuvo problemas interpretando la liquidacion {idx}: {e}")
-            #it_works = False
+        # except Exception as e:
+        # print(f"La función tuvo problemas interpretando la liquidacion {idx}: {e}")
+        # it_works = False
     print("Información general:")
     print(
         "La función revisar_liquidacion interpreta correctamente las liquidaciones:",
         it_works,
     )
     print("Embarques con inconsistencias:", liquidaciones_inconsistencias)
-    print("Cantidad de embarques con inconsistencias:", len(liquidaciones_inconsistencias))
+    print(
+        "Cantidad de embarques con inconsistencias:", len(liquidaciones_inconsistencias)
+    )
     print()
     hay_inconsistencias, inconsistencias = revisar_liquidacion(liquidacion_ejemplo)
     print("Información del embarque de ejemplo:")

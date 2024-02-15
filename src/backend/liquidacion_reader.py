@@ -60,7 +60,7 @@ def embarques_three_tables(
         paginas (list): List of integers
 
     Returns:
-        tuple: tuple with two coordinates (list, list, list)
+        tuple: tuple with tres coordinates (list, list, list)
 
     Raises:
         AssertionError: If embarques is not a list
@@ -498,16 +498,17 @@ def liquidaciones(
         # Importamos y ordenamos las tablas
         try:
             embarque, paginas = interpreter(liquidacion)
-        except Exception as e:
-            print("Liquidación problemática:")
-            print(liquidacion)
-            raise e
-        # Ajustamos el fomrato de cada lista de la lista embaruqes tal que tenga 5 DataFrames correspondiendo al "main", "cost", "note", "main_summary"
-        embarque, error, paginas = embarques_three_tables(embarque, paginas)
+            # Ajustamos el fomrato de cada lista de la lista embaruqes tal que tenga 5 DataFrames correspondiendo al "main", "cost", "note", "main_summary"
+            embarque, error, paginas = embarques_three_tables(embarque, paginas)
+            ubicacion = [(key, pagina) for pagina in paginas]
+            ubicaciones.extend(ubicacion)
+            embarques.extend(embarque)
+        except:
+            if liquidacion.endswith((".xls", ".xlsx")):
+                error = [1]
+            else:
+                error = ["Todas las páginas"]
 
-        ubicacion = [(key, pagina) for pagina in paginas]
-        ubicaciones.extend(ubicacion)
-        embarques.extend(embarque)
         errores[key] = error
 
     if os.path.isdir(folder):

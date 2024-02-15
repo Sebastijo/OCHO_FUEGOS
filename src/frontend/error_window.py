@@ -52,13 +52,17 @@ def inputErrorWindow(window: tk.Tk, e: Exception):
     mainFrame_error = ventana_error.mainFrame
 
     label_error_header = tk.Label(
-        mainFrame_error, text="No se pudo ejecutar el programa a causa del siguiente error:", bg=background, fg=foreground, font=font
+        mainFrame_error,
+        text="No se pudo ejecutar el programa a causa del siguiente error:",
+        bg=background,
+        fg=foreground,
+        font=font,
     )
     label_error = tk.Label(
         mainFrame_error, text=str(e), bg=background, fg=foreground, font=font
     )
-    label_error_header.pack(padx=30, pady=(30,10))
-    label_error.pack(padx=10, pady=(0,30))
+    label_error_header.pack(padx=30, pady=(30, 10))
+    label_error.pack(padx=10, pady=(0, 30))
 
     okButton = Boton(mainFrame_error, "OK", ventana_error.destroy, "output_button")
     okButton.configure(width=10)
@@ -88,24 +92,28 @@ def revisarWindow(
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Create a Text widget and attach the Scrollbar
-    text_widget = tk.Text(mainFrame_revisar, wrap="none", yscrollcommand=scrollbar.set, width=90)
+    text_widget = tk.Text(
+        mainFrame_revisar, wrap="none", yscrollcommand=scrollbar.set, width=90
+    )
     text_widget.pack(expand=True, fill=tk.BOTH)
     text_widget.configure(bg=background, fg=foreground, font=font)
 
+    # Creamos el forrmato y agregamos los embarques no leídos
     noLeidosHeader = "Embarques no leídos:\n\n"
     text_widget.insert(tk.END, noLeidosHeader)
     embarques_no_leidos = {
-        key: ", ".join(f"p. {num}" for num in value)
+        key: ", ".join(f"p. {num}" if type(num) != str else f"{num}" for num in value)
         for key, value in embarques_no_leidos.items()
         if value != []
     }
     for key, value in embarques_no_leidos.items():
         text_widget.insert(tk.END, "\t" + key + ": " + value + "\n")
 
+    # Creamos el formato y agregamos los embarques con inconsistencias
     inconsistenciasHeader = "\n Embarques con inconsistencias:\n"
     text_widget.insert(tk.END, inconsistenciasHeader)
     for key in embarques_con_inconsistencias.keys():
-        text_widget.insert(tk.END, "\n\t" + str(key[0])+ ", p." + str(key[1]) + "\n")
+        text_widget.insert(tk.END, "\n\t" + str(key[0]) + ", p." + str(key[1]) + "\n")
         for value in embarques_con_inconsistencias[key]:
             text_widget.insert(tk.END, "\t" + "- " + value + "\n")
 
@@ -137,8 +145,15 @@ if __name__ == "__main__":
     ventana_test = Ventana(titulo="test")
     root_test = ventana_test.root
     mainFrame_test = ventana_test.mainFrame
-    revisar_button = Boton(mainFrame_test, "Revisar", lambda: revisarWindow(root_test, errores, revisar), "output_button")
-    error_button = Boton(mainFrame_test, "Error", lambda: inputErrorWindow(root_test, e), "output_button")
+    revisar_button = Boton(
+        mainFrame_test,
+        "Revisar",
+        lambda: revisarWindow(root_test, errores, revisar),
+        "output_button",
+    )
+    error_button = Boton(
+        mainFrame_test, "Error", lambda: inputErrorWindow(root_test, e), "output_button"
+    )
     salir_button = Boton(mainFrame_test, "Salir", ventana_test.destroy, "exit_button")
     revisar_button.pack()
     error_button.pack()

@@ -20,7 +20,12 @@ bg = {
     "window_text": "#000739",
 }
 bg_on_enter = {"?": "#FCFF45", "output_button": "#000D56", "exit_button": "#6B0000"}
-fg = {"window": "#DDDDDD","output_button": "#FFFFFF", "exit_button": "#FFFFFF", "window_text": "#DDDDDD"}
+fg = {
+    "window": "#DDDDDD",
+    "output_button": "#FFFFFF",
+    "exit_button": "#FFFFFF",
+    "window_text": "#DDDDDD",
+}
 activebackground = {"output_button": "#DDDDDD", "exit_button": "#DDDDDD"}
 activeforeground = fg
 font = {"?": 8, "output_button": 40, "exit_button": 40}
@@ -177,7 +182,7 @@ COD_PUERTO_EMBARQUE = {
 
 # LIQUIDACIONES
 # Diccionario para el main table de liquidacion_reader.py y liquidacion_interpreter.py
-main_dict_liq = { # 12Islands
+main_dict_liq = {  # 12Islands
     "Observacion": "Observacion",  # New
     "日期 Date": "FECHA VENTA",  # New
     "板号 Pallet No.": "FOLIO",  # Old
@@ -195,33 +200,21 @@ main_dict_liq = { # 12Islands
 
 main_dict_liq_standard = {  # Standard y JumboFruit
     "观察": "Observacion",  # New
-    "日期": "日期 Date", # New
-    "版号": "板号 Pallet No.", # Old
-    "CSG": "果园 CSG", # Old
-    "品种": "品种 Variety", # Old
-    "尺寸": "大小 Size", # Old
-    "到货数量": "数量 Quantity", # New
-    "重量": "规格 Specification", # Old (Que hago con esto? xD)
-    "单价": "价格 (人民币) Price RMB", # New
-    "金额": "总数 (人民币) Total RMB", # New
-    "美金": "总数 (美金) Total USD", # New
+    "日期": "日期 Date",  # New
+    "版号": "板号 Pallet No.",  # Old
+    "CSG": "果园 CSG",  # Old
+    "品种": "品种 Variety",  # Old
+    "尺寸": "大小 Size",  # Old
+    "到货数量": "数量 Quantity",  # New
+    "重量": "规格 Specification",  # Old (Que hago con esto? xD)
+    "单价": "价格 (人民币) Price RMB",  # New
+    "金额": "总数 (人民币) Total RMB",  # New
+    "美金": "总数 (美金) Total USD",  # New
 }
 
-['观察', 'Sell Price']
-# key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG
-key_liq = [
-    "FOLIO",
-    "CSG",
-    "VARIEDAD",
-    "CALIBRES",
-]
+["观察", "Sell Price"]
+# key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG en control_final para el merge
+key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 
 # key para el main table de liquidacion_reader.py. Se usa en los que no tienen columna CSG
-key_liq_incompleto = [
-    "FOLIO",
-    "VARIEDAD",
-    "CALIBRES",
-]
-
-
-
+key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]

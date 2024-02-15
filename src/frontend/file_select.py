@@ -11,7 +11,7 @@ Librerías:
 """
 
 # Importamos paquetes
-import tkinter.filedialog
+from typing import Union
 import tkinter as tk
 from tkinterdnd2 import *
 
@@ -26,7 +26,9 @@ background = var.bg["window"]
 
 
 class BarraBusqueda:
-    def __init__(self, contenedor: tk.Frame or TkinterDnD.Tk, content: str) -> None:
+    def __init__(
+        self, contenedor: Union[tk.Frame, TkinterDnD.Tk], content: str
+    ) -> None:
         """
         Inicializa una instancia de la clase BarraBusqueda.
 

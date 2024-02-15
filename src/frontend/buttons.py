@@ -24,6 +24,7 @@ activebackground = var.activebackground
 activeforeground = var.activeforeground
 font = var.font
 
+
 # Creamos la clase Boton que corresponde a los botones que se usarán en el GUI (exceptuando "?", que se definirá directamente cuando se use).
 class Boton:
     def __init__(
@@ -68,12 +69,14 @@ class Boton:
 
         self.boton.bind(
             "<Enter>",
-            lambda event: self.boton.config(bg=bg_on_enter["output_button"])
-            if self.style == "output_button"
-            else (
-                self.boton.config(bg=bg_on_enter["exit_button"])
-                if self.style == "exit_button"
-                else None
+            lambda event: (
+                self.boton.config(bg=bg_on_enter["output_button"])
+                if self.style == "output_button"
+                else (
+                    self.boton.config(bg=bg_on_enter["exit_button"])
+                    if self.style == "exit_button"
+                    else None
+                )
             ),
         )
 
@@ -143,7 +146,7 @@ class Boton:
 
         """
         self.boton.configure(**kwargs)
-    
+
     def destroy(self):
         """
         Destruye el botón.
@@ -161,7 +164,7 @@ class Boton:
 
         """
         self.boton.config(state="disabled")
-    
+
     def enable(self):
         """
         Habilita el botón.

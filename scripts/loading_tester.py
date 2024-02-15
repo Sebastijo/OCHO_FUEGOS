@@ -1,17 +1,17 @@
 import tkinter as tk
 from tkinter import ttk
-import time
+
+# import time
 import threading
 from tkinterdnd2 import *
 from src.backend.control_final import control
-import sys
 
 embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_base_embarques.xlsx"
-    )
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_base_embarques.xlsx"
+)
 facturas_path_ = (
     r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_facturas_proformas.xlsx"
-    )
+)
 tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_tarifa_aerea.xlsx"
 
 liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_liquidacion"
@@ -20,13 +20,15 @@ liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\mock_liqui
 def salir():
     thread = threader[0]
     thread.join()
-    root.destroy()
-    sys.exit()
+    root.quit()
+
 
 def process():
     control(embarques_path_, facturas_path_, tarifa_path_, liquidaciones_path_)
 
+
 threader = []
+
 
 def process_thread():
     progress_bar.start()
@@ -34,6 +36,7 @@ def process_thread():
     thread.start()
     threader.clear()
     threader.append(thread)
+
 
 # GUI setup
 root = TkinterDnD.Tk()

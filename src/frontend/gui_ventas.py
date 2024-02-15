@@ -18,6 +18,7 @@ from tkinterdnd2 import *
 import pandas as pd
 from xlsxwriter.workbook import Workbook
 import os
+
 # import sys
 # import threading
 
@@ -93,7 +94,7 @@ def runVentas() -> None:
         ejecutar.enable()
         return
 
-    # Ubicación deonde se guarde el control de embarques
+    # Ubicación donde se guarde el control de embarques
     control_path = (
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx"
     )
@@ -150,8 +151,8 @@ def runVentas() -> None:
         row=2, column=0, sticky=tk.E
     )  # Mostramos los botones finales
     ejecutar.enable()  # Habilitamos el botón de ejecución
-    #loading_bar.stop()  # Detenemos la barra de progreso
-    #loading_bar.pack_forget()  # Ocultamos la barra de progreso
+    # loading_bar.stop()  # Detenemos la barra de progreso
+    # loading_bar.pack_forget()  # Ocultamos la barra de progreso
     return
 
 
@@ -193,7 +194,7 @@ ejecutar = Boton(
 
 # Boton que cierra el programa, eliminando los threads abiertos
 def quitter():
-    #for thread in threading.enumerate():
+    # for thread in threading.enumerate():
     #    if thread != threading.main_thread():
     #        thread.join()
     root.quit()
@@ -203,9 +204,9 @@ salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
 # Create and configure the progress bar
 style = ttk.Style()
 style.configure("TProgressbar", thickness=20)
-#loading_bar = ttk.Progressbar(
+# loading_bar = ttk.Progressbar(
 #    frameFinalButtonsAndBar, mode="indeterminate", style="TProgressbar", length=450
-#)
+# )
 
 """
 def update_loading_bar(progress):
@@ -241,8 +242,8 @@ ejecutar.configure(command=runVentas)
 frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.E)
 frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
 
-#loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
-#loading_bar.pack_forget()
+# loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
+# loading_bar.pack_forget()
 info.pack(side=tk.LEFT, anchor="n")
 salir.pack(side=tk.RIGHT, anchor="n")
 ejecutar.pack(side=tk.RIGHT, anchor="n")

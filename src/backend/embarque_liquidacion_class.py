@@ -7,6 +7,7 @@ Lenguaje: Python 3.11.7
 Librerías:
 - pandas: 2.2.0
 """
+
 import pandas as pd
 import re
 

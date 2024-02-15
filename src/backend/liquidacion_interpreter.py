@@ -250,7 +250,6 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
             break
     cost.columns = ["其他费用 Additional Fees", "人民币 RMB", "美金 USD"]
 
-
     # Posicionamos donde corresponde (al final)
     assert (
         "Commission" in cost["其他费用 Additional Fees"].values

@@ -122,6 +122,7 @@ def control(
                 pkl.dump(revisar, file)
 
     else:
+        # Revisamos que el input sean archivos y que estos existan
         for input in [embarques_path, facturas_path, tarifa_path, liquidaciones_path]:
             assert (
                 type(input) == str
@@ -150,6 +151,8 @@ def control(
             total_operations = 0
         if update_loading_bar:  # 1ra operacion
             update_loading_bar(1 / total_operations * 100)
+
+        # Creamos el pseudocontrol
         pseudo_control = pseudoControl(
             embarques_path,
             facturas_path,
@@ -157,40 +160,22 @@ def control(
             update_loading_bar,
             total_operations,
         )
+
         if update_loading_bar:  # 5ta operacion
             update_loading_bar(1 / total_operations * 100)
+
+        # Creamos la liquidaciones
         liquidacion, errores, revisar = liquidaciones(
             liquidaciones_path, update_loading_bar, total_operations
         )
-        if update_loading_bar: # 6ta operacion
-            update_loading_bar(1 / total_operations * 100)
 
-    if __name__ == "__main__":
-        # Resumen de los inputs:
-        duplicate_elements = (
-            pseudo_control[pseudo_control.duplicated(key_liq)][key_liq]
-            .drop_duplicates()
-            .reset_index(drop=True)
-        )
-        print("Embarques en pseudocontrol =", pseudo_control.shape[0])
-        print("Key_liq duplicado en pseudo_control =", duplicate_elements.shape[0])
-        suma_sin = 0
-        suma_con = 0
-        for embarque in liquidacion:
-            if embarque.CSG:
-                suma_con += embarque.main.shape[0]
-            else:
-                suma_sin += embarque.main.shape[0]
-        print("Embarques sin CSG en liquidaciones =", suma_sin)
-        print("Embarques con CSG en liquidaciones =", suma_con)
-        print("Embarques totales en liquidaciones =", suma_sin + suma_con)
+        if update_loading_bar:  # 6ta operacion
+            update_loading_bar(1 / total_operations * 100)
 
     # Separamos las liquidaciones con y sin CSG
     liq_con_CSG = []
     liq_sin_CSG = []
     for embarques in liquidacion:
-        # Eliminamos las columnas "CAJAS" y "KG NET/CAJA" de las liquidaciones
-        embarques.main = embarques.main.drop(columns=["KG NET/CAJA"])
         if embarques.CSG:
             liq_con_CSG.append(embarques.main)
         else:
@@ -222,15 +207,18 @@ def control(
         ]:
             control_df[column] = None
     else:
+        for liquidacion in liq_con_CSG + liq_sin_CSG:
+            liquidacion["KG NET/CAJA"] = liquidacion["KG NET/CAJA"].astype(str)
+
         # Concatenamos las liquidaciones con y sin CSG
-        if len(liq_con_CSG) > 0: # Si hay liquidaciones con CSG
+        if len(liq_con_CSG) > 0:  # Si hay liquidaciones con CSG
             liquidacion_con_CSG = pd.concat(liq_con_CSG)
             control_df = pseudo_control.merge(
                 liquidacion_con_CSG,
                 how="left",
                 on=key_liq,
             )
-            if len(liq_sin_CSG) > 0: 
+            if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
                 control_df = control_df.merge(
                     liquidacion_sin_CSG,
@@ -238,7 +226,7 @@ def control(
                     on=key_liq_incompleto,
                     suffixes=("_con", "_sin"),
                 )
-        else: # Si no hay liquidaciones con CSG
+        else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
             control_df = pseudo_control.merge(
                 liquidacion_sin_CSG,
