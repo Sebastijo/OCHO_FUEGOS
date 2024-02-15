@@ -14,7 +14,6 @@ Librerías:
 
 # Importamos paquetes
 import os
-import tabula
 import pandas as pd
 import numpy as np
 
@@ -24,16 +23,18 @@ if __name__ == "__main__":
     from src.config import variables as var
     from src.backend.embarque_liquidacion_class import embarqueL
     from src.backend.liquidacion_revisar import revisar_liquidacion
+    from src.backend.liquidacion_interpreter import interpreter
 else:
     from ..config import variables as var
     from .embarque_liquidacion_class import embarqueL
     from .liquidacion_revisar import revisar_liquidacion
+    from .liquidacion_interpreter import interpreter
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq
 
 if __name__ == "__main__":
-    # Path to the liquidaciones folder real
+    # Path to the liquidaciones folder
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
@@ -41,91 +42,6 @@ if __name__ == "__main__":
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester.pdf"
     )
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
-
-
-def import_and_group(liquidacion: str) -> tuple[list, list]:
-    """
-    Takes in a liquidación file in the forma of a PDF in the format of the 12Islands liquidation format (can have multimple embarques)
-    Returns tuple with two coordinates:
-
-    0) A list of lists, the n-th list contains the tables, as DataFrames, corresponding to the n-th embarque.
-    1) A list of integers, the n-th integer is the page number of the first page of the n-th embarque.
-
-    Args:
-        liquidaciones_folder (str): Path to the liquidaciones folder
-
-    Returns:
-        tuple: tuple with two coordinates (list, list)
-
-    Raises:
-        AssertionError: If the path does not exist
-        AssertionError: If the path is not a PDF file
-        AssertionError: If the number of tables in a page is not 1 or >= 3
-        AssertionError: If the embarque index is not correct: In each cycle, it should be the last index of embarques or the last index of embarques plus 1
-    """
-    assert os.path.exists(liquidacion), f"La ruta del archivo {liquidacion} no existe."
-    assert os.path.isfile(liquidacion) and liquidacion.lower().endswith(
-        ".pdf"
-    ), f"El archivo en {liquidacion} no es un archivo PDF."
-
-    embarques = []  # Lista de todos los embarques
-    paginas_list = (
-        []
-    )  # Lista cuya n-ésima entrada contiene la primera página del n-ésimo embarque
-    embarqueNum = 0  # Índice del embarque en la lista de embarques
-    i = 0  # Índice de página (pagina - 1)
-    pages_left = True
-    while pages_left:  # Recorremos hasta que no queden hojas
-        embarque_change = False  # "El embarque cambió respecto al ciclo anterior"
-        while not embarque_change:  # Mientras nos mantengamos en el mismo embarque
-            """
-            Las páginas del PDF contienen distintos embarques, cada embarque puede estar contenido en varias págnas las cuales están una tras la otra.
-            Este while se encarga de identificar los diferentes embarques y poner todas las tablas de un mismo embarque en una misma msima lista metida en la lista embarques.
-            """
-            page = i + 1  # Definimos la página actual a partir del índice
-
-            try:
-                # Transformamos la página en una lista de tablas DataFrame
-
-                tables_in_page = tabula.read_pdf(
-                    liquidacion,
-                    pages=page,
-                    multiple_tables=True,
-                    pandas_options={"dtype": str},
-                )
-            except Exception as e:  # Si no hay hojas restantes, terminamos
-                assert (
-                    str(e)
-                    == "java.lang.IndexOutOfBoundsException: Page number does not exist."
-                ), f"Error de lecutra del PDF de liquidacion {liquidacion}: {e}"
-                pages_left = False
-                break
-
-            assert (
-                embarqueNum == len(embarques) or embarqueNum == len(embarques) - 1
-            ), "El índice de embarque no es correcto"
-            if embarqueNum == len(
-                embarques
-            ):  # Si el embarque no existe, lo creamos y guardamos su núemro de página
-                embarques.append(tables_in_page)
-                paginas_list.append(page)
-
-            elif (
-                embarqueNum == len(embarques) - 1
-            ):  # Si el embarque si existe, lo agregamos
-                embarques[embarqueNum] = embarques[embarqueNum] + tables_in_page
-            cardinality = len(tables_in_page)  # Cantidad de tables en la hoja
-            assert (
-                cardinality >= 3 or cardinality == 1
-            ), f"La cantidad de tablas en la página {page} del archivo {liquidacion} no es correcta; deberían srer una o más que tres."
-            if (
-                cardinality >= 3
-            ):  # Si es la última página de embarque, cambiamos de embarque
-                embarqueNum += 1
-                embarque_change = True
-            i += 1  # Pasamos a la siguiente pagina
-
-    return embarques, paginas_list
 
 
 # The following is called "embarques_three_tables" since, before update, it took a list of lists of DataFrames and returned
@@ -255,10 +171,13 @@ def embarques_three_tables(
                 # Si es así, la tabla es de información principal
                 # Verificamos si es la primera que se encontró de este tipo
                 if type(embarque_["main"]) != pd.DataFrame:
+                    if not "Observacion" in table.columns:
+                        table["Observacion"] = False
                     # Si es así, la guardamos
                     embarque_["main"] = table
                 else:
                     # Si no es la primera, la agregamos a la que ya se encontró
+                    table[False] = False
                     embarque_["main"], formato_valido = add_df(embarque_["main"], table)
             # Verificamos si la cantidad de columnas igual a 3
             elif len(table.columns) == 3:
@@ -296,6 +215,7 @@ def embarques_three_tables(
             and set(main_dict_liq.keys())
             - set(embarque_["main"].columns)
             - {"果园 CSG"}
+            - {"Observacion"}
             != set()
         ):
             formato_valido = False
@@ -318,10 +238,9 @@ def embarques_three_tables(
             # Remplazamos el nombre de las filas de cost por los valores de su primera columna (luego eliminamos la primera columna)
             embarque_["cost"].index = embarque_["cost"].iloc[:, 0]
             embarque_["cost"] = embarque_["cost"].iloc[:, 1:]
-
             if not "Total Fees" in embarque_["cost"].index:
                 formato_valido = False
-
+                print(embarque_["cost"].index)
             # Verificamos que la tabla de costos tenga las columnas válidas:
             if (
                 not "USD" in embarque_["cost"].columns
@@ -331,10 +250,16 @@ def embarques_three_tables(
             else:
                 # Convertimos las columnas que dcorresponden de cost a numéricas
                 embarque_["cost"]["RMB"] = pd.to_numeric(
-                    embarque_["cost"]["RMB"].str.replace(",", "")
+                    embarque_["cost"]["RMB"]
+                    .str.replace(",", "")
+                    .str.replace(r"\(|\)", "", regex=True)
+                    .replace("nan", 0)
                 )
                 embarque_["cost"]["USD"] = pd.to_numeric(
-                    embarque_["cost"]["USD"].str.replace(",", "")
+                    embarque_["cost"]["USD"]
+                    .str.replace(",", "")
+                    .str.replace(r"\(|\)", "", regex=True)
+                    .replace("nan", 0)
                 )
 
         # Extraemos main_summarry y establecemos el fomrato de las columnas de main:
@@ -372,6 +297,7 @@ def embarques_three_tables(
 
             # Replace 'nan' with numpy's representation of NaN
             embarque_["main"] = embarque_["main"].replace("nan", np.nan)
+            embarque_["cost"] = embarque_["cost"].replace("nan", np.nan)
             # Eliminamos elementos sin cajas de main
             embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS LIQUIDADAS"])
             # Asignamos el KG NET/CAJA de los elementos que les pueda faltar
@@ -384,7 +310,6 @@ def embarques_three_tables(
                     ].fillna(common_value)
                 else:
                     formato_valido = False
-
         if formato_valido:
             try:
                 # Los pesos como numeros
@@ -463,6 +388,34 @@ def feature_engine(embarque: embarqueL) -> None:
     """
     assert isinstance(embarque, embarqueL), "El embarque no es de la clase embarqueL"
 
+    def df_to_str(df: pd.DataFrame) -> str:
+        """
+        Función que toma un DataFrame y lo convierte a un string uniendo todas las filas y columnas.
+        """
+        assert isinstance(df, pd.DataFrame), f"El objeto {df} no es un DataFrame"
+        df = df.reset_index(drop=True)
+        stringed_df = ""
+        for column in df.columns:
+            stringed_df += str(column) + " "
+            for idx, element in enumerate(df[column]):
+                if idx == len(df[column]) - 1:
+                    stringed_df += str(element) + " "
+                else:
+                    stringed_df += str(element) + " "
+
+        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ")
+
+        return stringed_df
+
+    # Si todos los elementos de la columan de observacion son False, los cambiamos por la nota.
+    # Esto se utiliza para el formato 12Islands
+    if (
+        embarque.main[embarque.main["Observacion"].isin([False, "False"])].shape
+        == embarque.main.shape
+    ):
+        observacion_str = df_to_str(embarque.note)
+        embarque.main["Observacion"] = observacion_str
+
     # Definimos los costos totales
     fees_index = embarque.cost.index.get_loc("Total Fees")  # Índice de Total Fees
     costo_total = embarque.cost.iloc[:fees_index].sum()  # Total Fees a mano
@@ -503,7 +456,9 @@ def feature_engine(embarque: embarqueL) -> None:
 
 
 # ARREGLAR COMENTARIO INTRODUCTORIO
-def liquidaciones(folder: str) -> tuple[list, dict, dict]:
+def liquidaciones(
+    folder: str, update_loading_bar: callable = None, total_operations: int = None
+) -> tuple[list, dict, dict]:
     """
     Takes a PDF folder with the liquidations in the format of 12Islands as multiple PDFs.
     Returns a tuple:
@@ -541,10 +496,15 @@ def liquidaciones(folder: str) -> tuple[list, dict, dict]:
         liquidacion = os.path.join(folder, liquidacion)
 
         # Importamos y ordenamos las tablas
-        embarque, paginas = import_and_group(liquidacion)
-
+        try:
+            embarque, paginas = interpreter(liquidacion)
+        except Exception as e:
+            print("Liquidación problemática:")
+            print(liquidacion)
+            raise e
         # Ajustamos el fomrato de cada lista de la lista embaruqes tal que tenga 5 DataFrames correspondiendo al "main", "cost", "note", "main_summary"
         embarque, error, paginas = embarques_three_tables(embarque, paginas)
+
         ubicacion = [(key, pagina) for pagina in paginas]
         ubicaciones.extend(ubicacion)
         embarques.extend(embarque)
@@ -553,9 +513,16 @@ def liquidaciones(folder: str) -> tuple[list, dict, dict]:
     if os.path.isdir(folder):
         for liquidacion in os.listdir(folder):
             procesarLiquidacionYAlmacenarDatos(liquidacion)
+            if update_loading_bar:  # liquidacion operacion
+                update_loading_bar(1 / total_operations * 100)
+
     else:
-        assert os.path.isfile(folder), f"La ruta del archivo {folder} no es un archivo ni una carpeta."
+        assert os.path.isfile(
+            folder
+        ), f"La ruta del archivo {folder} no es un archivo ni una carpeta."
         procesarLiquidacionYAlmacenarDatos(folder)
+        if update_loading_bar:  # liquidacion operacion
+            update_loading_bar(1 / total_operations * 100)
 
     assert len(ubicaciones) == len(
         embarques

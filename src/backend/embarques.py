@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
 
 def import_and_check(
-    embarques_path: str, facturas_path: str, tarifa_path: str
+    embarques_path: str, facturas_path: str, tarifa_path: str, update_loading_bar: callable = None, total_operations: int = None
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Function to be called in pseudoControl with the objective of importing and cheking the validity of the inputted Excel files
@@ -73,7 +73,7 @@ def import_and_check(
         tarifa_path (str): Path to the tarifa Excel file.
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]: Tuple with the dataframes and an error message.
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]: Tuple with the dataframes.
     """
     try:
         if (
@@ -106,8 +106,14 @@ def import_and_check(
                 tarifa.to_pickle(tarifa_pickle)
         else:
             embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
+            if update_loading_bar: # 2ra operacion
+                update_loading_bar(1/total_operations * 100)
             facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
+            if update_loading_bar: # 3ra operacion
+                update_loading_bar(1/total_operations * 100)
             tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
+            if update_loading_bar: # 4ra operacion
+                update_loading_bar(1/total_operations * 100)
     except Exception as e:
         raise ValueError(
             f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas. El error encontrado es: {e}"
@@ -135,7 +141,7 @@ def import_and_check(
 
 
 def pseudoControl(
-    embarques_path: str, facturas_path: str, tarifa_path: str
+    embarques_path: str, facturas_path: str, tarifa_path: str, update_loading_bar: callable = None, total_operations: int = None
 ) -> pd.DataFrame:
     """
     Esta función toma tres archivos: embarques, tarifa y factura para agregar la información pertinente a un archivo de control de embarques.
@@ -161,7 +167,7 @@ def pseudoControl(
 
     # importamos y revisamos los archivos
     embarques, facturas, tarifa = import_and_check(
-        embarques_path, facturas_path, tarifa_path
+        embarques_path, facturas_path, tarifa_path, update_loading_bar, total_operations
     )
 
     # Traducimos
@@ -321,10 +327,9 @@ def pseudoControl(
 
 
 if __name__ == "__main__":
-    control, errores = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
+    control = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
 
     print("Control de embarques (sin liquidaciones):")
     print(control)
-    print(errores)
 
     print("Observación:", "Falta la parte en rojo en la referencia")

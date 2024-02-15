@@ -13,10 +13,13 @@ Librerías:
 
 # Importación de bibliotecas necesarias
 import tkinter as tk
+from tkinter import ttk
 from tkinterdnd2 import *
 import pandas as pd
 from xlsxwriter.workbook import Workbook
 import os
+# import sys
+# import threading
 
 # modulos propios
 if __name__ == "__main__":
@@ -67,23 +70,28 @@ for idx, tipo in enumerate(contents):
 
 
 # Acción del botón de ejecución
-def runVentas() -> dict:
+def runVentas() -> None:
     """
     Función que se ejecuta al presionar el botón de ejecución.
     """
-    
+    ejecutar.disable()
     # Guardamos los paths de los archivos seleccionados
     inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
     for tipo in barrasBusqueda:
         inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
 
     # Ejecutamos el programa de ventas
-    control_df, errores, revisar = control(
-        inputPaths["embarques"],
-        inputPaths["facturas"],
-        inputPaths["tarifas"],
-        inputPaths["liquidaciones"],
-    )
+    try:
+        control_df, errores, revisar = control(
+            inputPaths["embarques"],
+            inputPaths["facturas"],
+            inputPaths["tarifas"],
+            inputPaths["liquidaciones"],
+        )
+    except Exception as e:
+        inputErrorWindow(root, e)
+        ejecutar.enable()
+        return
 
     # Ubicación deonde se guarde el control de embarques
     control_path = (
@@ -91,7 +99,7 @@ def runVentas() -> dict:
     )
 
     # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
-    frameFinalButtons.grid_forget()  # Borramos los botones finales
+    frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
 
     # Creamos el Excel de output
     if os.path.exists(control_path):  # Si el archivo existe, lo borramos
@@ -138,9 +146,14 @@ def runVentas() -> dict:
         output[-1].pack(padx=10, pady=(10, 10))
         output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
     outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
-    frameFinalButtons.grid(
+    frameFinalButtonsAndBar.grid(
         row=2, column=0, sticky=tk.E
     )  # Mostramos los botones finales
+    ejecutar.enable()  # Habilitamos el botón de ejecución
+    #loading_bar.stop()  # Detenemos la barra de progreso
+    #loading_bar.pack_forget()  # Ocultamos la barra de progreso
+    return
+
 
 # Creamos el contenido de los outputs:
 outputFrame = tk.Frame(
@@ -162,7 +175,8 @@ output.append(
 )
 
 # Creación de los botones finales de output y de exit.
-frameFinalButtons = tk.Frame(mainFrame, bd=4, bg=bg["window"])
+frameFinalButtonsAndBar = tk.Frame(mainFrame, bd=4, bg=bg["window"])
+frameFinalButtons = tk.Frame(frameFinalButtonsAndBar, bd=4, bg=bg["window"])
 info = InfoBoton(
     frameFinalButtons,
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet."
@@ -175,15 +189,60 @@ info = InfoBoton(
 ejecutar = Boton(
     frameFinalButtons, "Ejecutar", lambda: print("Ejecutar"), "output_button"
 )  # Botón de ejecución
-salir = Boton(frameFinalButtons, "Salir", root.quit, "exit_button")  # Botón de salida
+
+
+# Boton que cierra el programa, eliminando los threads abiertos
+def quitter():
+    #for thread in threading.enumerate():
+    #    if thread != threading.main_thread():
+    #        thread.join()
+    root.quit()
+
+
+salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
+# Create and configure the progress bar
+style = ttk.Style()
+style.configure("TProgressbar", thickness=20)
+#loading_bar = ttk.Progressbar(
+#    frameFinalButtonsAndBar, mode="indeterminate", style="TProgressbar", length=450
+#)
+
+"""
+def update_loading_bar(progress):
+
+    Función que actualiza la barra de progreso.
+
+    return
+"""
+
+# threader = []
+
+"""
+def runVentas_thread():
+    
+    Función que ejecuta la función runVentas en un hilo.
+    
+    ejecutar.disable()
+    loading_bar.start()
+    loading_bar.pack()
+    thread = threading.Thread(target=runVentas, daemon=True)
+    thread.start()
+    threader.clear()
+    threader.append(thread)
+"""
+
+# Hacer una función que una los threads y cierre la GUI. !!!!!
 
 
 # Definimos el command del boton ejecutar
 ejecutar.configure(command=runVentas)
 
 # Cargamos los botones a la ventana
-frameFinalButtons.grid(row=1, column=0, sticky=tk.E)
+frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.E)
+frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
 
+#loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
+#loading_bar.pack_forget()
 info.pack(side=tk.LEFT, anchor="n")
 salir.pack(side=tk.RIGHT, anchor="n")
 ejecutar.pack(side=tk.RIGHT, anchor="n")

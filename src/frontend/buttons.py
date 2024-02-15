@@ -152,3 +152,21 @@ class Boton:
 
         """
         self.boton.destroy()
+
+    def disable(self):
+        """
+        Deshabilita el botón.
+
+        Returns:
+
+        """
+        self.boton.config(state="disabled")
+    
+    def enable(self):
+        """
+        Habilita el botón.
+
+        Returns:
+
+        """
+        self.boton.config(state="normal")
