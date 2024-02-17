@@ -126,6 +126,7 @@ class BarraBusqueda:
 # Función que se llama cuando se realiza un evento de arrastrar y soltar (drag and drop)
 def get_path(event):
     text = event.data
+    text = text.strip('{}')
     event.widget.delete(1.0, tk.END)
     event.widget.insert(tk.END, text)
 

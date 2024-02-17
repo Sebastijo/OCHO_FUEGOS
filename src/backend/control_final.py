@@ -129,9 +129,12 @@ def control(
             ), f"La ruta del archivo '{input}' no es una cadena de texto."
             assert os.path.exists(input), f"La ruta del archivo '{input}' no existe."
             if input == liquidaciones_path:
-                assert os.path.isdir(input) or input.lower().endswith(
-                    (".pdf")
-                ), f"'{input}' no es una carpeta ni un archivo de PDF."
+                assert (
+                    os.path.isdir(input)
+                    or input.lower().endswith(".pdf")
+                    or input.lower().endswith(".xlsx")
+                    or input.lower().endswith(".xls")
+                ), f"'{input}' no es una carpeta ni un archivo de PDF ni un archivo Excel."
             else:
                 assert os.path.isfile(
                     input
