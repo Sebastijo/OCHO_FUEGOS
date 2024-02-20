@@ -190,7 +190,7 @@ main_dict_liq = {  # 12Islands
     "品种 Variety": "VARIEDAD",  # Old
     "大小 Size": "CALIBRES",  # Old
     "数量 Quantity": "CAJAS LIQUIDADAS",  # New
-    "规格 Specification": "KG NET/CAJA",  # Old (Que hago con esto? xD)
+    "规格 Specification": "KG NET/CAJA",  # Old
     "价格 (人民币) Price RMB": "RMB/CJ",  # New
     "总数 (人民币) Total RMB": "TOTAL RMB",  # New
     "总数 (美金) Total USD": "TOTAL USD",  # New
@@ -206,7 +206,7 @@ main_dict_liq_standard = {  # Standard y JumboFruit
     "品种": "品种 Variety",  # Old
     "尺寸": "大小 Size",  # Old
     "到货数量": "数量 Quantity",  # New
-    "重量": "规格 Specification",  # Old (Que hago con esto? xD)
+    "重量": "规格 Specification",  # Old
     "单价": "价格 (人民币) Price RMB",  # New
     "金额": "总数 (人民币) Total RMB",  # New
     "美金": "总数 (美金) Total USD",  # New

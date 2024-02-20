@@ -15,14 +15,17 @@ Lenguaje: Python 3.11.7
 Librerías:
 - pandas: 2.2.0
 - numpy: 1.24.2
+- sympy: 1.12
 - tabula: 2.9.0
 """
 
 # Importación de librerías
 import pandas as pd
 import numpy as np
+import sympy as sp
 import tabula
 import os
+from decimal import Decimal
 
 # importamos modulos porpios
 if __name__ == "__main__":
@@ -35,8 +38,8 @@ else:
 main_dict_liq_standard = var.main_dict_liq_standard
 
 if __name__ == "__main__":
-    OF_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\8F liquidation template.xlsx"
-    JF_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\016. Liquidation-品牌-8F-by air-369-84891634 - copia.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\104. Liquidation-品牌-8F  柜号 SZLU-9152413.xlsx"
+    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\121. Liquidation-品牌-8F  柜号 CXRU-1465266.xlsx"
 
 
 def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
@@ -148,6 +151,34 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
         (".xlsx", ".xls")
     ), f"El archivo '{liquidacion}' no es un archivo .xlsx o .xls."
 
+    def simplifier(x):
+        """
+        Takes a string x of the form f"{expression}KG" and return f"{simplified}KG"
+        Example: simplifier("2*2.5KG") -> "5KG"
+
+        Args:
+            x (str): The string to be simplified
+
+        Returns:
+            str: The simplified string
+        """
+        if isinstance(x, str):
+            # Extract the expression from the string
+            expression = x.split("KG")[0]
+            # Simplify the expression
+            simplified = sp.simplify(expression)
+            # Convert the simplified expression to Decimal
+            simplified_decimal = Decimal(str(simplified))
+            # Remove unnecessary decimal places
+            simplified_decimal = simplified_decimal.normalize()
+            # Convert back to string
+            simplified_str = str(simplified_decimal)
+            # Return the simplified expression
+            return f"{simplified_str}KG"
+        else:
+            return np.nan if np.isnan(x) else str(x)
+
+    # Leemos el archivo
     liquidacion_df = pd.read_excel(liquidacion, dtype=str)
 
     # Encontramos la tabla main
@@ -199,6 +230,7 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
             [list(liquidacion_df.columns)[0], *wanted_columns]
         ]
 
+    # Renombramos las columnas y establecemos las columnas que queremos
     liquidacion_df = liquidacion_df.rename(columns=main_dict_liq_standard)
     wanted_columns = [main_dict_liq_standard[column] for column in wanted_columns]
 
@@ -232,6 +264,9 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
         .reset_index(drop=True)
     ).copy()
 
+    # si una caja tiene masa "2*2.5KG", por ejemplo, se remplaza por "5KG"
+    main["规格 Specification"] = main["规格 Specification"].apply(simplifier)
+
     # Definimos la tabla de notas
     note = pd.DataFrame(columns=["Note:"])
 
@@ -240,6 +275,8 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
     main["总收益 FOB Total Return"] = 0
     main["日期 Date"] = main["日期 Date"].fillna("No vendido")
     main.loc[main.index[-1], "日期 Date"] = np.nan
+
+    # Simplifacamos los pesos de las cajas (ej: 2*2.5KG -> 5KG)
 
     # Borramos la columna en chino
     for column in cost.columns:
@@ -251,13 +288,15 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
     cost.columns = ["其他费用 Additional Fees", "人民币 RMB", "美金 USD"]
 
     # Posicionamos donde corresponde (al final)
-    assert (
-        "Commission" in cost["其他费用 Additional Fees"].values
-    ), f"La fila de comisión no fue encontrada en el archivo {liquidacion}: no existe la fila '{'Commission'}' en el archivo .xlsx."
-    commission_location = cost[cost["其他费用 Additional Fees"] == "Commission"].index[
-        0
-    ]
+    assert any(
+        "Commission" in value for value in cost["其他费用 Additional Fees"].values
+    ), f"La fila de comisión no fue encontrada en el archivo {liquidacion}: no existe una fila que contenga '{'Commission'}' en el archivo .xlsx."
+    commission_location = cost[
+        cost["其他费用 Additional Fees"].str.contains("Commission")
+    ].index[0]
+
     cost_rows = list(range(cost.shape[0]))
+
     assert (
         commission_location in cost_rows
     ), f"La posición de comission ({commission_location}) no se encuentra en los indices de las columnas de costo ({cost_rows})"
@@ -351,21 +390,21 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
 
 
 if __name__ == "__main__":
-    embarque_template, page_template = interpreter(OF_path)
+    embarque_example1, page_example1 = interpreter(example1)
     print("Template 8F:")
     print("Main:")
-    print(embarque_template[0][0])
+    print(embarque_example1[0][0])
     print("Cost:")
-    print(embarque_template[0][1])
+    print(embarque_example1[0][1])
     print("Note:")
-    print(embarque_template[0][2])
+    print(embarque_example1[0][2])
     print()
-    embarque_jumbo, page_jumbo = interpreter(JF_path)
+    embarque_example2, page_example2 = interpreter(example2)
     print("JumboFruit:")
     print("Main:")
-    print(embarque_jumbo[0][0])
+    print(embarque_example2[0][0])
     print("Cost:")
-    print(embarque_jumbo[0][1])
+    print(embarque_example2[0][1])
     print("Note:")
-    print(embarque_jumbo[0][2])
+    print(embarque_example2[0][2])
     print()

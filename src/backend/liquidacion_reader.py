@@ -487,7 +487,7 @@ def liquidaciones(
 
     def procesarLiquidacionYAlmacenarDatos(liquidacion: str) -> None:
         """
-        Recibe un string con el path de (la carpeta de liquidaciones o) una liquidación y la procesa para ser almacenada en la lista de embarques y errores.
+        Recibe un string con el path de una liquidación y la interpreta y luego agrupa considerando errores y registrando la página inicial de cada embarque.
         """
         # Creamos una key que distingue el archivo
         key = os.path.basename(liquidacion)
@@ -503,7 +503,7 @@ def liquidaciones(
             ubicacion = [(key, pagina) for pagina in paginas]
             ubicaciones.extend(ubicacion)
             embarques.extend(embarque)
-        except:
+        except Exception as e:
             if liquidacion.endswith((".xls", ".xlsx")):
                 error = [1]
             else:
@@ -563,20 +563,25 @@ def liquidaciones(
 if __name__ == "__main__":
     embarques, errores, revisar = liquidaciones(folder)
 
-    print("Main del último embarque:")
-    print(embarques[-1].main)
-    print()
-    print("Cost del último embarque:")
-    print(embarques[-1].cost)
-    print()
-    print("Note del último embarque:")
-    print(embarques[-1].note)
-    print()
-    print("Resumen de main del último embarque:")
-    print(embarques[-1].main_summary)
-    print()
+    if len(embarques) > 0:
+        print("Main del último embarque:")
+        print(embarques[-1].main)
+        print()
+        print("Cost del último embarque:")
+        print(embarques[-1].cost)
+        print()
+        print("Note del último embarque:")
+        print(embarques[-1].note)
+        print()
+        print("Resumen de main del último embarque:")
+        print(embarques[-1].main_summary)
+        print()
+    else:
+        print("Ningún embarque se pudo leer correctamente")
+        print()
+
     print("Errores totales:")
     print(errores)
     print()
     print("Por revisar:")
-    print(revisar)
+    print(revisar)   
