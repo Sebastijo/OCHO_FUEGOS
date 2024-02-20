@@ -1,76 +1,60 @@
-import sympy as sp
-from decimal import Decimal
-import numpy as np
 import pandas as pd
 
-column_to_test = pd.DataFrame(
-    {
-        "规格 Specification": [
-            "3*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "2*2.5KG",
-            "3*2.5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "5KG",
-            "2.5KG",
-            "3",
-            np.nan,
-            np.nan,
-        ]
-    }
-)
+data = {
+    "Category": ["A", "B", "A", "B", "A", "B"],
+    "Type": ["Y", "Y", "X", "Y", "X", "Y"],
+    "CAJAS": [10, 20, 15, 25, 12, 18],
+}
+
+df = pd.DataFrame(data)
+
+key_liq = ["Category", "Type"]
 
 
-def simplifier_for_dataFrame(columns: pd.DataFrame) -> pd.DataFrame:
-    return columns.apply(simplifier)
-
-def simplifier(x):
+def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
     """
-    Takes a string x of the form f"{expression}KG" and return f"{simplified}KG"
-    Example: simplifier("2*2.5KG") -> "5KG"
+    Recibe un (DataFrame del tipo entregado por la función) pseudoControl y devuelve el DataFrame con los siguientes cambios:
+    - Deja un único elemento por cada key_liq (elimina los duplicados).
+    - El representante de cada key_liq, en cada feature donde haya habido una diferencia entre los duplicados, se convierte a una tupla con el valor de la columna de cada representante.
+    - La cantidad de cajas, "CAJAS", siempre es una tupla con la cantidad de cajas de cada representante.
+    - Se agrega una columna a la derecha de "CAJAS", "CAJAS TOTALES", con la suma de las cajas de cada representante.
 
     Args:
-        x (str): The string to be simplified
+        df (pd.DataFrame): DataFrame del tipo entregado por la función pseudoControl.
 
     Returns:
-        str: The simplified string
+        pd.DataFrame: DataFrame con los cambios especificados.
+
+    Raises:
+        AssertionError: Si el input no es un DataFrame.
     """
-    if isinstance(x, str):
-        # Extract the expression from the string
-        expression = x.split("KG")[0]
-        # Simplify the expression
-        simplified = sp.simplify(expression)
-        # Convert the simplified expression to Decimal
-        simplified_decimal = Decimal(str(simplified))
-        # Remove unnecessary decimal places
-        simplified_decimal = simplified_decimal.normalize()
-        # Convert back to string
-        simplified_str = str(simplified_decimal)
-        # Return the simplified expression
-        return f"{simplified_str}KG"
-    else:
-        return np.nan if np.isnan(x) else str(x)
+    assert isinstance(
+        pseudocontrol, pd.DataFrame
+    ), f"El input '{pseudocontrol}' no es un DataFrame. En la función 'simplifier'. No se pudieron unir los pallets repetidos."
 
-# Test the function
-simplified_column = simplifier_for_dataFrame(column_to_test["规格 Specification"])
-print(simplified_column)
-print(simplifier("1.25KG"))  # 1.25KG
-print(simplifier("5"))  # 2.5KG
-print(simplifier("3"))  # 3KG
+    def unioner(df):
+        """
+        Recibe un DataFrame y lo reduce a un solo representante (fila). Si hay diferencias entre los representantes, estas se convierten a tuplas.
+        Si existe una columna con el nombre "CAJAS", la columna siempre se convierte en una tupla con la canidad de cajas de cada representante.
+        """
+        simp_df_data = {}
+        # Reducimos todas las filas a una sola fila, con cada elemento, de haber diferencias o ser CAJAS, convertido a una tupla.
+        for column in df.columns:
+            value = tuple(df[column].tolist())
+            if (column != "CAJAS" and all(elem == value[0] for elem in value)) or len(
+                value
+            ) == 1:
+                value = value[0]
+            simp_df_data[column] = [value]
+        simp_df = pd.DataFrame(simp_df_data)
 
+        return simp_df
 
-print(simplified_column)
+    # Reducimos el DataFrame a un solo representante por key_liq
+    pseudocontrol = pseudocontrol.groupby(key_liq).apply(unioner).reset_index(drop=True)
+
+    return pseudocontrol
+
+pseudo_control = simplifier(df)
+
+print(pseudo_control)

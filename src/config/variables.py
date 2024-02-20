@@ -152,7 +152,7 @@ cherry_color = {
 }
 
 
-# COD PUERTO DESTINO
+# COD PUERTO DESTINO ### Para configuracion
 COD_PUERTO_DESTINO = {
     "SHANGHAI AIRPORT": "411",
     "GUANGZHOU AIRPORT": "411",
@@ -178,6 +178,8 @@ COD_PUERTO_EMBARQUE = {
     "Los Libertadores": "965",
     "Valparaiso": "208",
 }
+
+# Precio contrato caja =====================================
 
 
 # LIQUIDACIONES
