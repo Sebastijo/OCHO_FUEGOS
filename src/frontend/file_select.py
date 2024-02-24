@@ -14,6 +14,7 @@ Librerías:
 from typing import Union
 import tkinter as tk
 from tkinterdnd2 import *
+from tkinter import filedialog
 
 # modulos propios
 if __name__ == "__main__":
@@ -158,7 +159,6 @@ def browsefunc(text: tk.Widget) -> None:
     filename = tk.filedialog.askopenfilename(filetypes=file_types)
     text.delete("1.0", tk.END)
     text.insert(tk.END, filename)
-
 
 # Probamos la clase BarraBusqueda
 if __name__ == "__main__":

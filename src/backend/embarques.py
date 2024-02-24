@@ -13,6 +13,8 @@ Librerías:
 import pandas as pd
 from datetime import datetime
 import os
+import json
+import sys
 
 
 # Definimos la fecha actual
@@ -31,7 +33,13 @@ tarifaDict = var.tarifaDict
 key_columns = var.key_columns
 cherry_color = var.cherry_color
 COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
-COD_PUERTO_DESTINO = var.COD_PUERTO_DESTINO
+
+# Cargamos el codigo de puerto destino actualizado
+directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+configuraciones = os.path.join(directory, "Configuraciones")
+with open(os.path.join(configuraciones, "cod_puerto_destino.json"), "r") as file:
+    COD_PUERTO_DESTINO_configuracion = json.load(file)
+COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion
 
 
 if __name__ == "__main__":
@@ -338,6 +346,6 @@ if __name__ == "__main__":
     control = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
 
     print("Control de embarques (sin liquidaciones):")
-    print(control)
+    print(control["COD PUERTO DESTINO"])
 
     print("Observación:", "Falta la parte en rojo en la referencia")
