@@ -202,7 +202,7 @@ def control(
                 liquidations = len(os.listdir(liquidaciones_path))
             else:
                 liquidations = 1
-            total_operations = 1 + 3 + 2 + liquidations
+            total_operations = 1 + 4 + 2 + liquidations
         else:
             total_operations = 0
         if update_loading_bar:  # 1ra operacion

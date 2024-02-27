@@ -111,22 +111,13 @@ key_columns = [
     "CALIBRES",
 ]
 
-"""
-key_elements_emabarques = (
-    "ConsigneeName",
-    "BillCode",
-    "VarietyName",
-    "PackageCode",
-    "CaliberName",
-)
-key_elements_facturas = (
-    "SiiReceptor_Name",
-    "Bill_Code",
-    "LabeledVariety_Name",
-    "Package_Code",
-    "Caliber_Name",
-)
-"""
+# Keys para unir los dataframes de venta (precios_contrato y embarques/control)
+key_precios_contrato = [
+    "CALIBRES",
+    "KG NET/CAJA",
+    "ETD WEEK",
+    "CLIENTE",
+]
 
 # Diccionario para la columna "COLOR" de venta.
 cherry_color = {
@@ -151,7 +142,7 @@ cherry_color = {
     "J-UP": "LIGHT",
 }
 
-
+"""
 # COD PUERTO DESTINO ### Para configuracion
 COD_PUERTO_DESTINO = {
     "SHANGHAI AIRPORT": "411",
@@ -169,6 +160,7 @@ COD_PUERTO_DESTINO = {
     "SAO PAULO AIRPORT": "220",
     "SINGAPUR": "332",
 }
+"""
 
 # COD PUERTO EMBARQUE
 COD_PUERTO_EMBARQUE = {

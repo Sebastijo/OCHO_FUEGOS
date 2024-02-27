@@ -7,10 +7,14 @@ Fecha: 10/01/2024
 Lenguaje: Python 3.11.7
 Librerías:
 - pandas: 2.2.0
+- sympy: 1.12
+- numpy: 1.26.3
 """
 
 # Importamos paquetes
 import pandas as pd
+import sympy as sp
+import numpy as np
 from datetime import datetime
 import os
 import json
@@ -31,12 +35,16 @@ embarquesDict = var.embarquesDict
 facturasDict = var.facturasDict
 tarifaDict = var.tarifaDict
 key_columns = var.key_columns
+key_precios_contrato = var.key_precios_contrato
 cherry_color = var.cherry_color
 COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
 
 # Cargamos el codigo de puerto destino actualizado
-directory = os.path.dirname(os.path.realpath(sys.argv[0]))
-configuraciones = os.path.join(directory, "Configuraciones")
+if __name__ == "__main__":
+    directory = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\src"
+else:
+    directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+configuraciones = os.path.join(directory, "config")
 with open(os.path.join(configuraciones, "cod_puerto_destino.json"), "r") as file:
     COD_PUERTO_DESTINO_configuracion = json.load(file)
 COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion
@@ -78,15 +86,20 @@ def import_and_check(
     0) embarques: pd.DataFrame
     1) facturas: pd.DataFrame
     2) tarifa: pd.DataFrame
+    3) precios_contrato: pd.DataFrame
 
     Args:
         embarques_path (str): Path to the embarques Excel file.
         facturas_path (str): Path to the facturas Excel file.
         tarifa_path (str): Path to the tarifa Excel file.
+        update_loading_bar (callable, optional): Function to update the loading bar. Defaults to None.
+        total_operations (int, optional): Total operations to be performed. Defaults to None.
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]: Tuple with the dataframes.
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: Tuple with the dataframes.
     """
+
+    precios_contrato_path = os.path.join(configuraciones, "precios_contrato.xlsx")
     try:
         if (
             __name__ == "__main__"
@@ -116,6 +129,12 @@ def import_and_check(
                     tarifa_path, sheet_name="Instructives", dtype=str
                 )
                 tarifa.to_pickle(tarifa_pickle)
+
+            source_precios_contrato = (
+                r"C:\Users\spinc\Desktop\OCHO_FUEGOS\src\config\precios_contrato.pkl"
+            )
+            precios_contrato = pd.read_pickle(source_precios_contrato)
+
         else:
             embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
             if update_loading_bar:  # 2ra operacion
@@ -126,9 +145,12 @@ def import_and_check(
             tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
             if update_loading_bar:  # 4ra operacion
                 update_loading_bar(1 / total_operations * 100)
+            precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
+            if update_loading_bar:  # 5ta operacion
+                update_loading_bar(1 / total_operations * 100)
     except Exception as e:
         raise ValueError(
-            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas. El error encontrado es: {e}"
+            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato. El error encontrado es: {e}"
         )
 
     # Revisamos las columnas de embarques
@@ -149,7 +171,19 @@ def import_and_check(
         tarifa_difference == set()
     ), f"La(s) columna(s) {tarifa_difference} no se encuentra(n) en el archivo de tarifa."
 
-    return embarques, facturas, tarifa
+    # Revisamos las columnas de precios_contrato
+    precios_contrato_difference = {
+        "CALIBRES",
+        "KG NET/CAJA",
+        "ETD WEEK",
+        "CLIENTE",
+        "PRECIO CONTRATO $/CAJA",
+    } - set(precios_contrato.columns)
+    assert (
+        precios_contrato_difference == set()
+    ), f"La(s) columna(s) {precios_contrato_difference} no se encuentra(n) en el archivo de precios_contrato."
+
+    return embarques, facturas, tarifa, precios_contrato
 
 
 def pseudoControl(
@@ -170,6 +204,7 @@ def pseudoControl(
     Returns:
         pd.DataFrame: Dataframe de control de embarques.
     """
+
     for file_path in [embarques_path, facturas_path, tarifa_path]:
         assert (
             type(file_path) == str
@@ -181,8 +216,31 @@ def pseudoControl(
             file_path
         ), f"'{file_path}' no es un archivo; puede que sea una carpeta."
 
+    def simplify_decimal(x: float) -> str:
+        """
+        Simplify a decimal number to a string.
+        """
+        if isinstance(x, str):
+            # Extract the expression from the string
+            expression = x.split("KG")[0]
+            # Simplify the expression
+            simplified = sp.simplify(expression)
+            # Remove unnecessary decimal places
+            simplified = (
+                str(simplified).rstrip("0").rstrip(".")
+                if "." in str(simplified)
+                else str(simplified)
+            )
+            # Return the simplified expression
+            return simplified
+        elif isinstance(x, (int, float)):
+            simplified = str(x).rstrip("0").rstrip(".") if "." in str(x) else str(x)
+            return simplified
+        else:
+            return np.nan if np.isnan(x) else str(x)
+
     # importamos y revisamos los archivos
-    embarques, facturas, tarifa = import_and_check(
+    embarques, facturas, tarifa, precios_contrato = import_and_check(
         embarques_path, facturas_path, tarifa_path, update_loading_bar, total_operations
     )
 
@@ -212,6 +270,23 @@ def pseudoControl(
     # Definimos el dataframe final "control"
     control = pd.merge(embarques, facturas, on="key", how="left")
 
+    # Agregamos los precios de contrato al dataframe de control. Esto agrega la columna "PRECIO CONTRATO $/CAJA"
+    precios_contrato["KG NET/CAJA"] = precios_contrato["KG NET/CAJA"].apply(
+        simplify_decimal
+    )
+
+    print(control[key_precios_contrato])
+    print(precios_contrato[key_precios_contrato])
+
+    control = pd.merge(control, precios_contrato, on=key_precios_contrato, how="left")
+
+    # Calculamos el PRECIO CONTRATO
+    control["PRECIO CONTRATO $/CAJA"] = pd.to_numeric(
+        control["PRECIO CONTRATO $/CAJA"], errors="coerce"
+    )
+    control["CAJAS"] = pd.to_numeric(control["CAJAS"], errors="coerce")
+    control["PRECIO CONTRATO"] = control["PRECIO CONTRATO $/CAJA"] * control["CAJAS"]
+
     # Parse the columns
     date_columns = [
         "FECHA FACTURA",
@@ -227,7 +302,6 @@ def pseudoControl(
     control["FACT PROFORMA $/CAJA"] = pd.to_numeric(
         control["FACT PROFORMA $/CAJA"], errors="coerce"
     )
-    control["CAJAS"] = pd.to_numeric(control["CAJAS"], errors="coerce")
 
     # Agregamos las columnas que faltan
     control["TRANSPORTE PUERTO"] = None  # Columna vacía
@@ -335,6 +409,8 @@ def pseudoControl(
         "FACT EXPORTACION $/CAJA",
         "FACT EXPORTACION $ TOTAL",
         "FLETE/kg",
+        "PRECIO CONTRATO $/CAJA",
+        "PRECIO CONTRATO",
     ]
 
     control = control[column_order]
@@ -346,6 +422,6 @@ if __name__ == "__main__":
     control = pseudoControl(embarques_path_, facturas_path_, tarifa_path_)
 
     print("Control de embarques (sin liquidaciones):")
-    print(control["COD PUERTO DESTINO"])
+    print(control)
 
     print("Observación:", "Falta la parte en rojo en la referencia")

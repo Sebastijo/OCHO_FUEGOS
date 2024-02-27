@@ -25,7 +25,6 @@ import numpy as np
 import sympy as sp
 import tabula
 import os
-from decimal import Decimal
 
 # importamos modulos porpios
 if __name__ == "__main__":
@@ -167,14 +166,13 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
             expression = x.split("KG")[0]
             # Simplify the expression
             simplified = sp.simplify(expression)
-            # Convert the simplified expression to Decimal
-            simplified_decimal = Decimal(str(simplified))
             # Remove unnecessary decimal places
-            simplified_decimal = simplified_decimal.normalize()
-            # Convert back to string
-            simplified_str = str(simplified_decimal)
+            simplified = str(simplified).rstrip('0').rstrip('.') if '.' in str(simplified) else str(simplified)
             # Return the simplified expression
-            return f"{simplified_str}KG"
+            return f"{simplified}KG"
+        elif isinstance(x, (int, float)):
+            simplified = str(x).rstrip('0').rstrip('.') if '.' in str(x) else str(x)
+            return str(simplified) + "KG"
         else:
             return np.nan if np.isnan(x) else str(x)
 
