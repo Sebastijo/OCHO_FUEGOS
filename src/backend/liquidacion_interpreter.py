@@ -37,8 +37,8 @@ else:
 main_dict_liq_standard = var.main_dict_liq_standard
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\104. Liquidation-品牌-8F  柜号 SZLU-9152413.xlsx"
-    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\121. Liquidation-品牌-8F  柜号 CXRU-1465266.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\016. Liquidation-品牌-8F-by air-369-84891634 - copia.xlsx"
+    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\070. Liquidation-品牌-8F  柜号 TTNU-8361862.xlsx"
 
 
 def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
@@ -162,17 +162,23 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
             str: The simplified string
         """
         if isinstance(x, str):
-            # Extract the expression from the string
-            expression = x.split("KG")[0]
-            # Simplify the expression
-            simplified = sp.simplify(expression)
-            # Remove unnecessary decimal places
-            simplified = str(simplified).rstrip('0').rstrip('.') if '.' in str(simplified) else str(simplified)
-            # Return the simplified expression
-            return f"{simplified}KG"
+            if x == "nan":
+                return np.nan
+            else: 
+                # Extract the expression from the string
+                expression = x.split("KG")[0]
+                # Simplify the expression
+                simplified = sp.simplify(expression)
+                # Remove unnecessary decimal places
+                simplified = str(simplified).rstrip('0').rstrip('.') if '.' in str(simplified) else str(simplified)
+                # Return the simplified expression
+                return f"{simplified}KG"
         elif isinstance(x, (int, float)):
-            simplified = str(x).rstrip('0').rstrip('.') if '.' in str(x) else str(x)
-            return str(simplified) + "KG"
+            if not np.isnan(x):
+                simplified = str(x).rstrip('0').rstrip('.') if '.' in str(x) else str(x)
+                return str(simplified) + "KG"
+            else:
+                return np.nan
         else:
             return np.nan if np.isnan(x) else str(x)
 
@@ -271,7 +277,8 @@ def interpreter_standard(liquidacion: str) -> tuple[list, list]:
     # Hacemos cambios para que coincida con el formato general
     main["每箱收益 FOB FOB Return"] = 0
     main["总收益 FOB Total Return"] = 0
-    main["日期 Date"] = main["日期 Date"].fillna("No vendido")
+    mask = main.drop(["数量 Quantity", "每箱收益 FOB FOB Return", "总收益 FOB Total Return"], axis=1).isnull().all(axis=1) & ~main["数量 Quantity"].isnull()
+    main.loc[mask, "日期 Date"] = 'No vendido'
     main.loc[main.index[-1], "日期 Date"] = np.nan
 
     # Simplifacamos los pesos de las cajas (ej: 2*2.5KG -> 5KG)
