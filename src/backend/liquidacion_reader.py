@@ -240,7 +240,6 @@ def embarques_three_tables(
             embarque_["cost"] = embarque_["cost"].iloc[:, 1:]
             if not "Total Fees" in embarque_["cost"].index:
                 formato_valido = False
-                print(embarque_["cost"].index)
             # Verificamos que la tabla de costos tenga las columnas válidas:
             if (
                 not "USD" in embarque_["cost"].columns

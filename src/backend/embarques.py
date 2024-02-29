@@ -275,9 +275,6 @@ def pseudoControl(
         simplify_decimal
     )
 
-    print(control[key_precios_contrato])
-    print(precios_contrato[key_precios_contrato])
-
     control = pd.merge(control, precios_contrato, on=key_precios_contrato, how="left")
 
     # Calculamos el PRECIO CONTRATO

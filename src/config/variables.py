@@ -191,7 +191,8 @@ main_dict_liq = {  # 12Islands
     "总收益 FOB Total Return": "RETORNO FOB",  # New
 }
 
-main_dict_liq_standard = {  # Standard y JumboFruit
+# Diccionario para el main table de liquidacion_interpreter.py, liquidacion_standard.
+main_dict_liq_standard = {  # Standard -> 12Islands
     "观察": "Observacion",  # New
     "日期": "日期 Date",  # New
     "版号": "板号 Pallet No.",  # Old
@@ -205,7 +206,22 @@ main_dict_liq_standard = {  # Standard y JumboFruit
     "美金": "总数 (美金) Total USD",  # New
 }
 
-["观察", "Sell Price"]
+
+# Transforma de inglés a chino en interpreter_JF
+main_dict_liq_JF = {  # JF -> Standard
+    "Nota": "观察",
+    "Sales Box": "到货数量",
+    "Variety": "品种",
+    "Pallet Nr.": "版号",
+    "Weight": "重量",
+    "Size": "尺寸",
+    "Date": "日期",
+    "Brand": "CSG",
+    "Price": "单价",
+    "Total（RMB）": "金额",
+}
+
+
 # key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG en control_final para el merge
 key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 

@@ -30,11 +30,13 @@ config_paths = [
 if not all([os.path.exists(path) for path in config_paths]):
     # Creamos las carpeta de configuración en el dispositivo del usuario
     from src.config.config_maker import make_config
+
     make_config()
 
 
 # Iniciamos la interface de eusuario
 from src.frontend.gui_ventas import panqueca
+
 panqueca()
 
 
