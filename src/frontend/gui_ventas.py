@@ -94,22 +94,23 @@ def panqueca():
             inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
 
         # Ejecutamos el programa de ventas
-        try:
-            control_df, errores, revisar = control(
-                inputPaths["embarques"],
-                inputPaths["facturas"],
-                inputPaths["tarifas"],
-                inputPaths["liquidaciones"],
-            )
-        except Exception as e:
+        #try:
+        control_df, errores, revisar, liquidaciones_no_pareadas= control(
+            inputPaths["embarques"],
+            inputPaths["facturas"],
+            inputPaths["tarifas"],
+            inputPaths["liquidaciones"],
+        )
+        """except Exception as e:
             inputErrorWindow(root, e)
             ejecutar.enable()
-            return
+            return"""
 
         # Ubicación donde se guarde el control de embarques
         control_path = (
             r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx"
         )
+        liquidaciones_no_pareadas_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\liquidaciones_no_pareadas.xlsx"
 
         # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
@@ -118,6 +119,10 @@ def panqueca():
         if os.path.exists(control_path):  # Si el archivo existe, lo borramos
             os.remove(control_path)
         writer = pd.ExcelWriter(control_path, engine="xlsxwriter")
+        # Creamos el Excel de liquidaciones no pareadas
+        if os.path.exists(liquidaciones_no_pareadas_path):  # Si el archivo existe, lo borramos
+            os.remove(liquidaciones_no_pareadas_path)
+        liquidaciones_no_pareadas.to_excel(liquidaciones_no_pareadas_path, index=False)
 
         # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
         # the default header and skip one row to allow us to insert a user defined

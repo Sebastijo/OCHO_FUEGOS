@@ -27,12 +27,12 @@ else:
 if __name__ == "__main__":
     # Paths to your input files
     embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Base embarques.xlsx"
     )
     facturas_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Facturas proformas.xlsx"
     )
-    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
+    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Tarifas.xlsx"
 
     liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
@@ -113,7 +113,7 @@ def control(
     tarifa_path: str,
     liquidaciones_path: str,
     update_loading_bar: callable = None,
-) -> tuple[pd.DataFrame, dict, dict]:
+) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
     """
     Recibe los paths de los archivos de embarques (.xlsx), facturas (.xlsx), tarifa (.xlsx) y liquidaciones (folder)
     devuelve una tupla conteniendo:
@@ -121,6 +121,7 @@ def control(
     0) Un dataframe con el control final
     1) Un diccionario con los errores de liquidación
     2) Un diccionario con los elementos que necesitan ser revisados
+    3) Liquidaciones no pareadas
 
     Args:
         embarques_path (str): path del archivo de embarques
@@ -284,6 +285,18 @@ def control(
                 how="left",
                 on=key_liq,
             )
+
+            # Obtenemos las liquidaciones con CSG no pareadas
+            liquidaciones_con_CSG_no_pareadas = liquidacion_con_CSG.merge(
+                pseudo_control, how="left", on=key_liq, indicator=True
+            )
+            liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
+                list(liquidacion_con_CSG.columns).append("_merge")
+            ]
+            liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
+                liquidaciones_con_CSG_no_pareadas["_merge"] == "left_only"
+            ]
+
             if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
                 control_df = control_df.merge(
@@ -292,6 +305,23 @@ def control(
                     on=key_liq_incompleto,
                     suffixes=("_con", "_sin"),
                 )
+
+                # Obtenemos las liquidaciones sin CSG no pareadas
+                liquidaciones_sin_CSG_no_pareadas = liquidacion_sin_CSG.merge(
+                    pseudo_control, how="left", on=key_liq_incompleto, indicator=True
+                )
+                liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
+                    list(liquidacion_sin_CSG.columns).append("_merge")
+                ]
+                liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
+                    liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
+                ]
+                liquidaciones_sin_CSG_no_pareadas["CSG"] = np.nan
+
+            liquidaciones_no_pareadas = pd.concat(
+                [liquidaciones_con_CSG_no_pareadas, liquidaciones_sin_CSG_no_pareadas]
+            )
+
         else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
             control_df = pseudo_control.merge(
@@ -299,6 +329,20 @@ def control(
                 how="left",
                 on=key_liq_incompleto,
             )
+
+            # Obtenemos las liquidaciones sin CSG no pareadas
+            liquidaciones_sin_CSG_no_pareadas = liquidacion_sin_CSG.merge(
+                pseudo_control, how="left", on=key_liq_incompleto, indicator=True
+            )
+            liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
+                list(liquidacion_sin_CSG.columns) + ["_merge"]
+            ]
+            liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
+                liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
+            ]
+            liquidaciones_sin_CSG_no_pareadas["CSG"] = np.nan
+
+            liquidaciones_no_pareadas = liquidaciones_sin_CSG_no_pareadas
 
         # Juntamos las columnas duplicadas
         sin_list = [
@@ -328,6 +372,7 @@ def control(
         control_df,
         errores,
         revisar,
+        liquidaciones_no_pareadas,
     )
 
 

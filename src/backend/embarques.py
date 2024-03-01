@@ -38,6 +38,7 @@ key_columns = var.key_columns
 key_precios_contrato = var.key_precios_contrato
 cherry_color = var.cherry_color
 COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
+key_liq = var.key_liq
 
 # Cargamos el codigo de puerto destino actualizado
 if __name__ == "__main__":
@@ -411,6 +412,10 @@ def pseudoControl(
     ]
 
     control = control[column_order]
+
+    # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)
+    for key in key_liq:
+        control[key] = control[key].astype(str).str.upper()
 
     return control
 

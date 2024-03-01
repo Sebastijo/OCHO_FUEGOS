@@ -32,15 +32,15 @@ else:
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq
+key_liq = var.key_liq
+key_liq_incompleto = var.key_liq_incompleto
 
 if __name__ == "__main__":
     # Path to the liquidaciones folder
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester.pdf"
-    )
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_Liquidation-8F_Air-AWB_369-88354862.xlsx"
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -459,7 +459,8 @@ def liquidaciones(
     folder: str, update_loading_bar: callable = None, total_operations: int = None
 ) -> tuple[list, dict, dict]:
     """
-    Takes a PDF folder with the liquidations in the format of 12Islands as multiple PDFs.
+    Recieves a path to an Excel file or PDF file containing the liquidactions in the format of Happy Farm Fruit, Jumbo Fruit, 12Islands, or standard.
+    The function returns a tuple with three coordinates:
     Returns a tuple:
 
     0) A list of embarqueL, the n-th element of the list is an embarqueL corresponding to the n-th embarque in folder.
@@ -553,6 +554,11 @@ def liquidaciones(
         # Agregamos las columnas pertinentes
         feature_engine(embarque)
 
+        # Solo mayusculas en los valores de las columnas key (y en formato str)
+        keys = key_liq if embarque.CSG else key_liq_incompleto
+        for key in keys:
+            embarque.main[key] = embarque.main[key].astype(str).str.upper()
+
         # Agregamos el embarque a la lista de embarques_
         embarques_.append(embarque)
 
@@ -560,7 +566,7 @@ def liquidaciones(
 
 
 if __name__ == "__main__":
-    embarques, errores, revisar = liquidaciones(folder)
+    embarques, errores, revisar = liquidaciones(liquidacion)
 
     if len(embarques) > 0:
         print("Main del último embarque:")
@@ -583,4 +589,4 @@ if __name__ == "__main__":
     print(errores)
     print()
     print("Por revisar:")
-    print(revisar)   
+    print(revisar)
