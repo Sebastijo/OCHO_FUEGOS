@@ -221,6 +221,20 @@ main_dict_liq_JF = {  # JF -> Standard
     "Total（RMB）": "金额",
 }
 
+# Columnas necesarias para el formato HFF de liquidacion
+main_list_liq_HFF = [
+    "观察",
+    "到货数量",
+    "品种",
+    "版号",
+    "重量",
+    "尺寸",
+    "日期",
+    "销售数量",
+    "单价",
+    "金额",
+    "美金",
+]
 
 # key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG en control_final para el merge
 key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]

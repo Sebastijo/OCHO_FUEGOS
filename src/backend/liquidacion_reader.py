@@ -40,7 +40,7 @@ if __name__ == "__main__":
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-OERU4111845.xlsx"
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -447,6 +447,14 @@ def feature_engine(embarque: embarqueL) -> None:
     )
     embarque.main["COMISION/KG"] = (
         embarque.main["COMISION/CJ"] / embarque.main["KG NET/CAJA"]
+    )
+
+    # Establecemos los KG NET/CAJA como strings en un formato compatible con base embarues
+    embarque.main["KG NET/CAJA"] = (
+        embarque.main["KG NET/CAJA"]
+        .astype(float)
+        .astype(str)
+        .apply(lambda x: x.rstrip("0").rstrip("."))
     )
 
     # Agregamos columna COSTO Y COMISION
