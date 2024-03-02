@@ -122,7 +122,9 @@ def panqueca():
         # Creamos el Excel de liquidaciones no pareadas
         if os.path.exists(liquidaciones_no_pareadas_path):  # Si el archivo existe, lo borramos
             os.remove(liquidaciones_no_pareadas_path)
-        liquidaciones_no_pareadas.to_excel(liquidaciones_no_pareadas_path, index=False)
+
+        if liquidaciones_no_pareadas is not None:
+            liquidaciones_no_pareadas.to_excel(liquidaciones_no_pareadas_path, index=False)
 
         # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
         # the default header and skip one row to allow us to insert a user defined

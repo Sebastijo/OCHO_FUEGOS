@@ -40,7 +40,7 @@ if __name__ == "__main__":
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_Liquidation-8F_Air-AWB_369-88354862.xlsx"
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -106,7 +106,6 @@ def embarques_three_tables(
         # Remove leading spaces and replace leading slash in column names
         df.columns = df.columns.str.strip().str.replace("^/", "", regex=True)
         # Remove leading spaces in DataFrame content
-        # df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x) // depricated
         df = df.apply(
             lambda x: x.map(
                 lambda element: element.strip() if isinstance(element, str) else element
@@ -301,12 +300,19 @@ def embarques_three_tables(
             embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS LIQUIDADAS"])
             # Asignamos el KG NET/CAJA de los elementos que les pueda faltar
             if embarque_["main"]["KG NET/CAJA"].isna().any():
-                column_values = embarque_["main"]["KG NET/CAJA"].dropna()
+                column_values = (
+                    embarque_["main"]["KG NET/CAJA"]
+                    .dropna()
+                    .str.replace("KG", "")
+                    .astype(float)
+                )
                 if len(column_values.unique()) == 1:
-                    common_value = column_values.iloc[0]
+                    column_mean = (
+                        str(float(column_values.mean())).rstrip("0").rstrip(".") + "KG"
+                    )
                     embarque_["main"]["KG NET/CAJA"] = embarque_["main"][
                         "KG NET/CAJA"
-                    ].fillna(common_value)
+                    ].fillna(column_mean)
                 else:
                     formato_valido = False
         if formato_valido:

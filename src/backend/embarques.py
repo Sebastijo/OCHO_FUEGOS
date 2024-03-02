@@ -186,6 +186,65 @@ def import_and_check(
 
     return embarques, facturas, tarifa, precios_contrato
 
+def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
+    """
+    Recibe un (DataFrame del tipo entregado por la función) pseudoControl y devuelve el DataFrame con los siguientes cambios:
+    - Deja un único elemento por cada key_liq (elimina los duplicados).
+    - El representante de cada key_liq, en cada feature donde haya habido una diferencia entre los duplicados, se convierte a una tupla con el valor de la columna de cada representante.
+    - La cantidad de cajas, "CAJAS", siempre es una tupla con la cantidad de cajas de cada representante.
+    - Se agrega una columna a la derecha de "CAJAS", "CAJAS TOTALES", con la suma de las cajas de cada representante.
+
+    Args:
+        df (pd.DataFrame): DataFrame del tipo entregado por la función pseudoControl.
+
+    Returns:
+        pd.DataFrame: DataFrame con los cambios especificados.
+
+    Raises:
+        AssertionError: Si el input no es un DataFrame.
+    """
+    assert isinstance(
+        pseudocontrol, pd.DataFrame
+    ), f"El input '{pseudocontrol}' no es un DataFrame. En la función 'simplifier'. No se pudieron unir los pallets repetidos."
+
+    def unioner(df):
+        """
+        Recibe un DataFrame y lo reduce a un solo representante (fila). Si hay diferencias entre los representantes, estas se convierten a tuplas.
+        Si existe una columna con el nombre "CAJAS", la columna siempre se convierte en una tupla con la canidad de cajas de cada representante.
+        """
+        simp_df_data = {}
+        # Reducimos todas las filas a una sola fila, con cada elemento, de haber diferencias o ser CAJAS, convertido a una tupla.
+        for column in df.columns:
+            value = tuple(df[column].tolist())
+            value = tuple(
+                None if isinstance(x, (int, float)) and np.isnan(x) else x
+                for x in value
+            )
+            if (
+                (column != "CAJAS" and all(elem == value[0] for elem in value))
+                or len(value) == 1
+                or all(x is np.nan for x in value)
+            ):
+                value = value[0]
+            simp_df_data[column] = [value]
+        simp_df = pd.DataFrame(simp_df_data)
+
+        return simp_df
+
+    # Reducimos el DataFrame a un solo representante por key_liq
+    pseudocontrol = pseudocontrol.groupby(key_liq).apply(unioner).reset_index(drop=True)
+
+    # SUMAMOS TUPLAS DECEADAS: CAJAS SUMADAS, FACT PROFORMA $ TOTAL SUMADAS, PRECIO CONTRATO SUMADAS
+    sumador_de_tuplas = lambda cell: sum(cell) if type(cell) == tuple else cell
+    columnas_por_sumar = ["CAJAS", "FACT PROFORMA $ TOTAL", "PRECIO CONTRATO"]
+    for columna in columnas_por_sumar:
+        columna_sumada = columna + " SUMADAS"
+        pseudocontrol[columna_sumada] = pseudocontrol[columna].apply(sumador_de_tuplas)
+        column_sumadas_column = pseudocontrol.pop(columna_sumada)
+        column_index = pseudocontrol.columns.get_loc(columna)
+        pseudocontrol.insert(column_index + 1, columna_sumada, column_sumadas_column)
+
+    return pseudocontrol
 
 def pseudoControl(
     embarques_path: str,
@@ -203,7 +262,7 @@ def pseudoControl(
         tarifa_path (str): Path del archivo de tarifa.
 
     Returns:
-        pd.DataFrame: Dataframe de control de embarques.
+        pd.DataFrame: DataFrame con la información de los embarques, facturas y tarifa en un formato simplificado: un solo representante por key_liq.
     """
 
     for file_path in [embarques_path, facturas_path, tarifa_path]:
@@ -416,6 +475,9 @@ def pseudoControl(
     # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)
     for key in key_liq:
         control[key] = control[key].astype(str).str.upper()
+
+    # Simplificamos el DataFrame
+    control = simplifier(control)
 
     return control
 
