@@ -26,6 +26,7 @@ import sympy as sp
 from typing import Union
 import tabula
 import os
+import re
 
 # importamos modulos porpios
 if __name__ == "__main__":
@@ -178,8 +179,8 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
             if x == "nan":
                 return np.nan
             else:
-                # Extract the expression from the string
-                expression = x.split("KG")[0]
+                # Remove all letters and spaces
+                expression = re.sub(r'[a-zA-Z\s]', '', x)
                 # Simplify the expression
                 simplified = sp.simplify(expression)
                 # Remove unnecessary decimal places
@@ -189,7 +190,7 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
                     else str(simplified)
                 )
                 # Return the simplified expression
-                return f"{simplified}KG"
+                return str(simplified) + "KG"
         elif isinstance(x, (int, float)):
             if not np.isnan(x):
                 simplified = str(x).rstrip("0").rstrip(".") if "." in str(x) else str(x)
@@ -323,6 +324,7 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
         if contains_non_american.all():
             cost = cost.drop(columns=column)
             break
+
     cost.columns = ["其他费用 Additional Fees", "人民币 RMB", "美金 USD"]
 
     # Posicionamos donde corresponde (al final)

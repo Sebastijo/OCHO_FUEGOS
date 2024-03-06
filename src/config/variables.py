@@ -241,3 +241,8 @@ key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 
 # key para el main table de liquidacion_reader.py. Se usa en los que no tienen columna CSG
 key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
+
+# Los siguientes son los formatos de liquidaciones que usan CSG. Cualquier otro formato no lo usa.
+# El nombre del formato tiene que ser aquel que se encuentra en la columan ReceiverName de base embarques.
+# Es utilizado en embarques.py
+formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]

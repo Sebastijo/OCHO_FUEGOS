@@ -39,6 +39,8 @@ key_precios_contrato = var.key_precios_contrato
 cherry_color = var.cherry_color
 COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
 key_liq = var.key_liq
+key_liq_incompleto = var.key_liq_incompleto
+formatos_con_CSG = var.formatos_con_CSG
 
 # Cargamos el codigo de puerto destino actualizado
 if __name__ == "__main__":
@@ -54,12 +56,12 @@ COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion
 if __name__ == "__main__":
     # Paths to your input files
     embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Base embarques.xlsx"
     )
     facturas_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Facturas proformas.xlsx"
     )
-    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
+    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Tarifas.xlsx"
 
     # Pickle files for each DataFrame
     embarques_pickle = (
@@ -186,6 +188,7 @@ def import_and_check(
 
     return embarques, facturas, tarifa, precios_contrato
 
+
 def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
     """
     Recibe un (DataFrame del tipo entregado por la función) pseudoControl y devuelve el DataFrame con los siguientes cambios:
@@ -231,11 +234,30 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
 
         return simp_df
 
-    # Reducimos el DataFrame a un solo representante por key_liq
-    pseudocontrol = pseudocontrol.groupby(key_liq).apply(unioner).reset_index(drop=True)
+    # Reducimos el DataFrame a un solo representante por key_liq y key_liq_incompleto, según corresponda
+    # Harvest Time (Alex) es el único que usa el key_liq
+    pseudocontrol_HT = pseudocontrol[pseudocontrol["CLIENTE"].isin(formatos_con_CSG)]
+    pseudocontrol_not_HT = pseudocontrol[~pseudocontrol["CLIENTE"].isin(formatos_con_CSG)]
+
+    pseudocontrol_HT = (
+        pseudocontrol_HT.groupby(key_liq).apply(unioner).reset_index(drop=True)
+    )
+    pseudocontrol_not_HT = (
+        pseudocontrol_not_HT.groupby(key_liq_incompleto)
+        .apply(unioner)
+        .reset_index(drop=True)
+    )
+
+    pseudocontrol = pd.concat([pseudocontrol_HT, pseudocontrol_not_HT])
 
     # SUMAMOS TUPLAS DECEADAS: CAJAS SUMADAS, FACT PROFORMA $ TOTAL SUMADAS, PRECIO CONTRATO SUMADAS
-    sumador_de_tuplas = lambda cell: sum(cell) if type(cell) == tuple else cell
+    def sumador_de_tuplas(cell):
+        if isinstance(cell, tuple):
+            cell = tuple(0 if pd.isna(x) else x for x in cell)
+            return sum(cell)
+        else:
+            return cell
+
     columnas_por_sumar = ["CAJAS", "FACT PROFORMA $ TOTAL", "PRECIO CONTRATO"]
     for columna in columnas_por_sumar:
         columna_sumada = columna + " SUMADAS"
@@ -245,6 +267,7 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
         pseudocontrol.insert(column_index + 1, columna_sumada, column_sumadas_column)
 
     return pseudocontrol
+
 
 def pseudoControl(
     embarques_path: str,
@@ -433,6 +456,7 @@ def pseudoControl(
         "KG NET/CAJA",
         "BRUTOS/CAJA",
         "CAJAS",
+        "CAJAS SUMADAS",
         "PALLETS",
         "NETOS",
         "BRUTOS",
@@ -463,14 +487,15 @@ def pseudoControl(
         "FECHA VENC IVV",  # Empty
         "FACT PROFORMA $/CAJA",
         "FACT PROFORMA $ TOTAL",
+        "FACT PROFORMA $ TOTAL SUMADAS",
         "FACT EXPORTACION $/CAJA",
         "FACT EXPORTACION $ TOTAL",
         "FLETE/kg",
         "PRECIO CONTRATO $/CAJA",
         "PRECIO CONTRATO",
+        "PRECIO CONTRATO SUMADAS",
     ]
 
-    control = control[column_order]
 
     # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)
     for key in key_liq:
@@ -478,6 +503,8 @@ def pseudoControl(
 
     # Simplificamos el DataFrame
     control = simplifier(control)
+
+    control = control[column_order]
 
     return control
 

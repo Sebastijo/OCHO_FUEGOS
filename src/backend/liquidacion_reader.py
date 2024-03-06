@@ -303,16 +303,12 @@ def embarques_three_tables(
                 column_values = (
                     embarque_["main"]["KG NET/CAJA"]
                     .dropna()
-                    .str.replace("KG", "")
-                    .astype(float)
                 )
                 if len(column_values.unique()) == 1:
-                    column_mean = (
-                        str(float(column_values.mean())).rstrip("0").rstrip(".") + "KG"
-                    )
+                    common_value = column_values.iloc[0]
                     embarque_["main"]["KG NET/CAJA"] = embarque_["main"][
                         "KG NET/CAJA"
-                    ].fillna(column_mean)
+                    ].fillna(common_value)
                 else:
                     formato_valido = False
         if formato_valido:
