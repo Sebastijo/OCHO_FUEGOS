@@ -142,25 +142,6 @@ cherry_color = {
     "J-UP": "LIGHT",
 }
 
-"""
-# COD PUERTO DESTINO ### Para configuracion
-COD_PUERTO_DESTINO = {
-    "SHANGHAI AIRPORT": "411",
-    "GUANGZHOU AIRPORT": "411",
-    "CHANGSHA - HUANGHUA": "411",
-    "HONG KONG": "301",
-    "SHANGHAI": "301",
-    "SHENZHEN": "411",
-    "XIAMEN": "411",
-    "ZHENGZHOU AIRPORT": "411",
-    "BANGKOK": "319",
-    "MADRID": "517",
-    "MANILA": "335",
-    "SAO PAULO": "291",
-    "SAO PAULO AIRPORT": "220",
-    "SINGAPUR": "332",
-}
-"""
 
 # COD PUERTO EMBARQUE
 COD_PUERTO_EMBARQUE = {
@@ -169,9 +150,6 @@ COD_PUERTO_EMBARQUE = {
     "Los Libertadores": "965",
     "Valparaiso": "208",
 }
-
-# Precio contrato caja =====================================
-
 
 # LIQUIDACIONES
 # Diccionario para el main table de liquidacion_reader.py y liquidacion_interpreter.py
@@ -246,3 +224,5 @@ key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 # El nombre del formato tiene que ser aquel que se encuentra en la columan ReceiverName de base embarques.
 # Es utilizado en embarques.py
 formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
+
+output_directory_path = (r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx")

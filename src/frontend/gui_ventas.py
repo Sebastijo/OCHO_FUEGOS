@@ -31,6 +31,7 @@ if __name__ == "__main__":
     from src.frontend.error_window import inputErrorWindow, revisarWindow
     from src.backend.control_final import control
     from src.frontend.ventana import Ventana
+    from src.backend.output_doc_maker import export
 else:
     from .file_select import BarraBusqueda
     from .buttons import Boton
@@ -39,6 +40,14 @@ else:
     from .error_window import inputErrorWindow, revisarWindow
     from ..backend.control_final import control
     from .ventana import Ventana
+    from ..backend.output_doc_maker import export
+
+    # Variables universales:
+    bg = var.bg  # Color de fondo
+    fg = var.fg  # Color de texto
+    title = var.title  # Título de la ventana principal
+    control_path = var.output_directory_path  # Path del archivo de control
+
 
 def panqueca():
     """
@@ -46,17 +55,13 @@ def panqueca():
 
     Args:
         None
-    
+
     Returns:
         None
-    
+
     Raises:
         None
     """
-    # Variables universales:
-    bg = var.bg  # Color de fondo
-    fg = var.fg  # Color de texto
-    title = var.title  # Título de la ventana principal
 
     # Creación de la ventana principal utilizando tkinter
     ventana = Ventana(titulo=title["main"], DnD=True)
@@ -81,7 +86,6 @@ def panqueca():
             row=idx, column=0
         )  # Montamos la barra de busqueda en el frame
 
-
     # Acción del botón de ejecución
     def runVentas() -> None:
         """
@@ -89,68 +93,35 @@ def panqueca():
         """
         ejecutar.disable()
         # Guardamos los paths de los archivos seleccionados
-        inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
+        inputPaths = (
+            {}
+        )  # Diccionario que contiene los paths de los archivos seleccionados
         for tipo in barrasBusqueda:
-            inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
+            inputPaths[tipo] = (
+                barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
+            )
 
         # Ejecutamos el programa de ventas
-        #try:
-        control_df, errores, revisar, liquidaciones_no_pareadas= control(
-            inputPaths["embarques"],
-            inputPaths["facturas"],
-            inputPaths["tarifas"],
-            inputPaths["liquidaciones"],
-        )
-        """except Exception as e:
+        try:
+            control_df, errores, revisar, liquidaciones_no_pareadas, no_vendidos = (
+                control(
+                    inputPaths["embarques"],
+                    inputPaths["facturas"],
+                    inputPaths["tarifas"],
+                    inputPaths["liquidaciones"],
+                )
+            )
+        except Exception as e:
             inputErrorWindow(root, e)
             ejecutar.enable()
-            return"""
-
-        # Ubicación donde se guarde el control de embarques
-        control_path = (
-            r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx"
-        )
-        liquidaciones_no_pareadas_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\liquidaciones_no_pareadas.xlsx"
+            return
 
         # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
 
-        # Creamos el Excel de output
-        if os.path.exists(control_path):  # Si el archivo existe, lo borramos
-            os.remove(control_path)
-        writer = pd.ExcelWriter(control_path, engine="xlsxwriter")
-        # Creamos el Excel de liquidaciones no pareadas
-        if os.path.exists(liquidaciones_no_pareadas_path):  # Si el archivo existe, lo borramos
-            os.remove(liquidaciones_no_pareadas_path)
+        # Exportamos los resultados a la carpeta de outputs
+        export(control_df, liquidaciones_no_pareadas, no_vendidos)
 
-        if liquidaciones_no_pareadas is not None:
-            liquidaciones_no_pareadas.to_excel(liquidaciones_no_pareadas_path, index=False)
-
-        # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
-        # the default header and skip one row to allow us to insert a user defined
-        # header. Also remove index values by index=False
-        control_df.to_excel(
-            writer, sheet_name="Sheet1", startrow=1, header=False, index=False
-        )
-
-        workbook = writer.book
-        worksheet = writer.sheets["Sheet1"]
-        # Add a header format.
-        header_format = workbook.add_format(
-            {"bold": True, "fg_color": "#6FAAFF", "border": 1}
-        )
-        for col_num, value in enumerate(control_df.columns.values):
-            worksheet.write(0, col_num, value, header_format)
-
-            column_len = control_df[value].astype(str).str.len().max()
-            # Setting the length if the column header is larger
-            # than the max column value length
-            column_len = max(column_len, len(value)) + 3
-            # set the column length
-            worksheet.set_column(col_num, col_num, column_len)
-
-        # Close the Pandas Excel writer and output the Excel file.
-        writer.close()
         # Cambiamos el texto de los outputs
         output[0].configure(
             text=f"El resultado se encuentra disponible en\r {control_path}"
@@ -173,7 +144,6 @@ def panqueca():
         # loading_bar.stop()  # Detenemos la barra de progreso
         # loading_bar.pack_forget()  # Ocultamos la barra de progreso
         return
-
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
@@ -210,14 +180,12 @@ def panqueca():
         frameFinalButtons, "Ejecutar", lambda: print("Ejecutar"), "output_button"
     )  # Botón de ejecución
 
-
     # Boton que cierra el programa, eliminando los threads abiertos
     def quitter():
         # for thread in threading.enumerate():
         #    if thread != threading.main_thread():
         #        thread.join()
         root.quit()
-
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
     # Create and configure the progress bar
@@ -253,7 +221,6 @@ def panqueca():
 
     # Hacer una función que una los threads y cierre la GUI. !!!!!
 
-
     # Definimos el command del boton ejecutar
     ejecutar.configure(command=runVentas)
 
@@ -266,7 +233,6 @@ def panqueca():
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
-
 
     # Inicio del bucle principal para la ejecución de la interfaz gráfica
     root.mainloop()

@@ -41,7 +41,7 @@ main_dict_liq_JF = var.main_dict_liq_JF
 main_list_liq_HFF = var.main_list_liq_HFF
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-OERU4111845.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
     # example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\070. Liquidation-品牌-8F  柜号 TTNU-8361862.xlsx"
 
 
@@ -180,7 +180,7 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
                 return np.nan
             else:
                 # Remove all letters and spaces
-                expression = re.sub(r'[a-zA-Z\s]', '', x)
+                expression = re.sub(r"[a-zA-Z\s]", "", x)
                 # Simplify the expression
                 simplified = sp.simplify(expression)
                 # Remove unnecessary decimal places
@@ -298,21 +298,13 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
     # Hacemos cambios para que coincida con el formato general
     main["每箱收益 FOB FOB Return"] = 0
     main["总收益 FOB Total Return"] = 0
-    mask = (
-        main.drop(
-            [
-                "Observacion",
-                "数量 Quantity",
-                "每箱收益 FOB FOB Return",
-                "总收益 FOB Total Return",
-            ],
-            axis=1,
-        )
-        .isnull()
-        .all(axis=1)
-        & ~main["数量 Quantity"].isnull()
-    )
-    main.loc[mask, "日期 Date"] = "No vendido"
+
+    null_checker = lambda x: (x in {0, "0"} or (isinstance(x, float) and np.isnan(x)))
+    main.loc[
+        ~main["数量 Quantity"].apply(null_checker)
+        & main["价格 (人民币) Price RMB"].apply(null_checker),
+        "日期 Date",
+    ] = "No vendido"
     main.loc[main.index[-1], "日期 Date"] = np.nan
 
     # Simplifacamos los pesos de las cajas (ej: 2*2.5KG -> 5KG)

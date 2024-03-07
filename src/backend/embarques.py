@@ -237,7 +237,9 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
     # Reducimos el DataFrame a un solo representante por key_liq y key_liq_incompleto, según corresponda
     # Harvest Time (Alex) es el único que usa el key_liq
     pseudocontrol_HT = pseudocontrol[pseudocontrol["CLIENTE"].isin(formatos_con_CSG)]
-    pseudocontrol_not_HT = pseudocontrol[~pseudocontrol["CLIENTE"].isin(formatos_con_CSG)]
+    pseudocontrol_not_HT = pseudocontrol[
+        ~pseudocontrol["CLIENTE"].isin(formatos_con_CSG)
+    ]
 
     pseudocontrol_HT = (
         pseudocontrol_HT.groupby(key_liq).apply(unioner).reset_index(drop=True)
@@ -495,7 +497,6 @@ def pseudoControl(
         "PRECIO CONTRATO",
         "PRECIO CONTRATO SUMADAS",
     ]
-
 
     # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)
     for key in key_liq:

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-OERU4111845.xlsx"
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -191,7 +191,6 @@ def embarques_three_tables(
             else:
                 # Si no es ninguna de las anteriores, el formato no es válido
                 formato_valido = False
-
         # REVISAMOS ERRORES Y CORREGIMOS FORMATO:
 
         # Revisamos si hay algún elemento de embarque_ no esté definido
@@ -298,19 +297,19 @@ def embarques_three_tables(
             embarque_["cost"] = embarque_["cost"].replace("nan", np.nan)
             # Eliminamos elementos sin cajas de main
             embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS LIQUIDADAS"])
-            # Asignamos el KG NET/CAJA de los elementos que les pueda faltar
-            if embarque_["main"]["KG NET/CAJA"].isna().any():
-                column_values = (
-                    embarque_["main"]["KG NET/CAJA"]
-                    .dropna()
-                )
-                if len(column_values.unique()) == 1:
-                    common_value = column_values.iloc[0]
-                    embarque_["main"]["KG NET/CAJA"] = embarque_["main"][
-                        "KG NET/CAJA"
-                    ].fillna(common_value)
-                else:
-                    formato_valido = False
+            # Asignamos valores de los elementos que les pueda faltar
+            columns_to_fill = {"KG NET/CAJA", "VARIEDAD", "CALIBRES"}
+            for column in columns_to_fill:
+                if embarque_["main"][column].isna().any():
+                    column_values = embarque_["main"][column].dropna()
+                    if len(column_values.unique()) == 1:
+                        common_value = column_values.iloc[0]
+                        embarque_["main"][column] = embarque_["main"][column].fillna(
+                            common_value
+                        )
+                    elif column == "KG NET/CAJA":
+                        formato_valido = False
+ 
         if formato_valido:
             try:
                 # Los pesos como numeros
