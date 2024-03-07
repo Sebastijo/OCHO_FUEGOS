@@ -41,12 +41,9 @@ COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
 key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
 formatos_con_CSG = var.formatos_con_CSG
+directory = var.directory
 
 # Cargamos el codigo de puerto destino actualizado
-if __name__ == "__main__":
-    directory = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\src"
-else:
-    directory = os.path.dirname(os.path.realpath(sys.argv[0]))
 configuraciones = os.path.join(directory, "config")
 with open(os.path.join(configuraciones, "cod_puerto_destino.json"), "r") as file:
     COD_PUERTO_DESTINO_configuracion = json.load(file)

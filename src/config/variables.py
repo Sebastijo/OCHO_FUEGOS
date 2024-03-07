@@ -1,6 +1,8 @@
 """
 El objetivo de este arhivo es mantener todas las variables globales del programa.
 """
+import os
+import sys
 
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"
@@ -225,4 +227,5 @@ key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 # Es utilizado en embarques.py
 formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
 
-output_directory_path = (r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\output\program_output\control.xlsx")
+# Ubicación del programa en el dispositivo del usuario
+directory = os.path.dirname(os.path.realpath(sys.argv[0]))

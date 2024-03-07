@@ -17,7 +17,8 @@ if __name__ == "__main__":
 else:
     from ..config import variables as var
 
-control_path = var.output_directory_path
+directory = var.directory
+control_path = os.path.join(directory, "output", "Control.xlsx")
 
 if __name__ == "__main__":
     control_pickle = (
@@ -122,7 +123,11 @@ def export(
 
         # Add Liquidaciones no pareadas with liq_no_pareadas
         liq_no_pareadas.to_excel(
-            writer, sheet_name="Liquidaciones no pareadas", startrow=1, header=False, index=False
+            writer,
+            sheet_name="Liquidaciones no pareadas",
+            startrow=1,
+            header=False,
+            index=False,
         )
         worksheet2 = writer.sheets["Liquidaciones no pareadas"]
 

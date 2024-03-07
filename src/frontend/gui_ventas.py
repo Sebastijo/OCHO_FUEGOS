@@ -46,7 +46,8 @@ else:
     bg = var.bg  # Color de fondo
     fg = var.fg  # Color de texto
     title = var.title  # Título de la ventana principal
-    control_path = var.output_directory_path  # Path del archivo de control
+    directory = var.directory  # Directorio de trabajo
+    control_path = os.path.join(directory, "output", "Control.xlsx")  # Path del control
 
 
 def panqueca():
@@ -169,12 +170,34 @@ def panqueca():
     frameFinalButtons = tk.Frame(frameFinalButtonsAndBar, bd=4, bg=bg["window"])
     info = InfoBoton(
         frameFinalButtons,
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet."
-        + " Proin gravida dolor sit amet lacus accumsan et viverra justo commodo."
-        + " Proin sodales pulvinar tempor. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus."
-        + " Nam fermentum, nulla luctus pharetra vulputate,"
-        + " Felis tellus mollis orci, sed rhoncus sapien nunc eget odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-        + " Aenean euismod bibendum laoreet. Proin gravida.",
+        """
+        Este programa te permite gestionar información crucial de embarques, facturas, tarifas y liquidaciones mediante una práctica base de formato Excel. Sigue estos simples pasos:
+
+        1. Configuración Inicial:
+        - Dirígete a la ubicación del programa en tu dispositivo y asegúrate de que la carpeta 'config' contenga los archivos esperados.
+        - Puedes ajustar los contenidos de la carpeta 'config' según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
+        - Si la carpeta 'config' se corrompe, bórrala y vuelve a ejecutar el programa para restablecerla con los valores predeterminados.
+
+        2. Cargar Archivos:
+        - Arrastra tus archivos a las áreas correspondientes en el menú principal.
+        - La barra para subir liquidaciones acepta formatos como Excel, PDF o una carpeta que contenga estos documentos.
+        - Formatos de liquidaciones admitidos: 12Islands (.pdf), JumboFruit (comienza con 'BQ'), Happy Farm Fruit (comienza con 'HFF'), y formato estándar (comienza con '8F').
+        - Presiona 'Ejecutar' después de cargar tus archivos y espera a que el programa los procese.
+
+        3. Resultados:
+        - Una vez completado, encontrarás el resultado en la carpeta 'outputs' junto con un informe de errores en esta interfaz.
+        - El informe incluye liquidaciones no leídas y embarques con inconsistencias.
+        - Liquidaciones no leídas: errores de formato en el input.
+        - Inconsistencias en liquidaciones: problemas en el contenido (por ejemplo, comisiones incorrectas).
+
+        4. Salida Final:
+        - La carpeta 'outputs' contendrá un Excel con tres hojas: Base de Control, Liquidaciones no Pareadas y No Vendidos.
+        - Liquidaciones no pareadas: no asociadas a ningún embarque de la base de embarques.
+        - No vendidos: embarques cuyas unidades se venden a $0 USD.
+
+        5. Soporte y Contacto:
+        - Para agregar un nuevo formato, actualizar el programa o para cualquier necesidad adjacente a la ingeniería o a la ingeniería matemática, no dude en contactar al desarrollador (datos disponibles al final de esta ventana).
+        """,
     )  # Boton de información sobre el programa
     ejecutar = Boton(
         frameFinalButtons, "Ejecutar", lambda: print("Ejecutar"), "output_button"

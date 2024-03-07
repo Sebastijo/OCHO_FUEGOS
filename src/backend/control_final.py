@@ -363,7 +363,9 @@ def control(
 
     df_output = [control_df, liquidaciones_no_pareadas, no_vendidos]
     for idx, df in enumerate(df_output):
-        df_output[idx].replace({str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True)
+        df_output[idx].replace(
+            {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
+        )
 
     return (
         control_df,

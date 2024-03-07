@@ -514,6 +514,13 @@ def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: DataFrame con el formato de liquidacion standard.
+
+    Raises:
+        AssertionError: Si el archivo de liquidación no existe, no es un archivo o no es un archivo .pdf o .xlsx.
+        AssertionError: Si la tabla principal no fue encontrada en el archivo .xlsx.
+        AssertionError: Si las columnas de la tabla principal del archivo .xlsx no son las correctas.
+        AssertionError: Si la fila de totales no fue encontrada en el archivo .xlsx.
+        AssertionError: Si la posición de comission no se encuentra en los indices de las columnas de costo.
     """
     assert os.path.exists(liquidacion), f"El archivo '{liquidacion}' no existe."
     assert os.path.isfile(liquidacion), f"El archivo '{liquidacion}' no es un archivo."
@@ -564,7 +571,6 @@ def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
 
     return interpreter_standard(liquidacion_df)
 
-
 def interpreter(liquidacion: str) -> tuple[list, list]:
     """
     Esta función interpreta los datos de un archivo de liquidación y devuelve una tupla con las siguientes coordenadas:
@@ -589,16 +595,22 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
 
     filename = filename = os.path.basename(liquidacion)
 
+    assert (
+        filename.endswith(".pdf")
+        or filename.startswith("8F")
+        or filename.startswith("HFF")
+        or filename.startswith("BQ")
+    ), f"No se pudo detectar el formato del archivo {filename}, asegurece que termine en '.pdf' o que empiece con alguno de los siguientes: '8F', 'HFF', 'BQ'."
+
     # Verificamos el tipo de liquidación
     if filename.endswith(".pdf"):
         liquidacion_list = interpreter_12Islands(liquidacion)
-    else:
-        if filename.startswith("8F"):
-            liquidacion_list = interpreter_standard(liquidacion)
-        elif filename.startswith("HFF"):
-            liquidacion_list = interpreter_HFF(liquidacion)
-        elif filename.startswith("BQ"):
-            liquidacion_list = interpreter_JF(liquidacion)
+    elif filename.startswith("8F"):
+        liquidacion_list = interpreter_standard(liquidacion)
+    elif filename.startswith("BQ"):
+        liquidacion_list = interpreter_JF(liquidacion)
+    elif filename.startswith("HFF"):
+        liquidacion_list = interpreter_HFF(liquidacion)
 
     return liquidacion_list
 

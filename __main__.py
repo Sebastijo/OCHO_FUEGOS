@@ -14,12 +14,15 @@ __version__ = "0.1.0"
 import os
 import sys
 
-directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+from src.config import variables as var
+
+directory = var.directory
 
 # Obtenemos los paths que deben existir antes de correr el programa
 config_folder = os.path.join(directory, "config")
 destination_cod_puerto_destino = os.path.join(config_folder, "cod_puerto_destino.json")
 destination_precios_contrato = os.path.join(config_folder, "precios_contrato.xlsx")
+output_folder = os.path.join(directory, "output")
 
 config_paths = [
     config_folder,
@@ -32,6 +35,10 @@ if not all([os.path.exists(path) for path in config_paths]):
     from src.config.config_maker import make_config
 
     make_config()
+
+# Creamos la carpeta de output en el dispositivo del usuario, de no existir.
+if not os.path.exists(output_folder):
+    os.mkdir(output_folder)
 
 
 # Iniciamos la interface de eusuario

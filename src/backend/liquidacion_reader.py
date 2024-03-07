@@ -309,7 +309,7 @@ def embarques_three_tables(
                         )
                     elif column == "KG NET/CAJA":
                         formato_valido = False
- 
+
         if formato_valido:
             try:
                 # Los pesos como numeros
