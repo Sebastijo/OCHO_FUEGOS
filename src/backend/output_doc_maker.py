@@ -18,7 +18,8 @@ else:
     from ..config import variables as var
 
 directory = var.directory
-control_path = os.path.join(directory, "output", "Control.xlsx")
+datos_folder = os.path.join(directory, "Datos del programa")
+control_path = os.path.join(datos_folder, "output", "Control.xlsx")
 
 if __name__ == "__main__":
     control_pickle = (

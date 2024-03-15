@@ -47,7 +47,9 @@ else:
     fg = var.fg  # Color de texto
     title = var.title  # Título de la ventana principal
     directory = var.directory  # Directorio de trabajo
-    control_path = os.path.join(directory, "output", "Control.xlsx")  # Path del control
+
+    datos_folder = os.path.join(directory, "Datos del programa")
+    control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
 
 
 def panqueca():

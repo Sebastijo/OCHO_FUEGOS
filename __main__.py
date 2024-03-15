@@ -12,22 +12,24 @@ __version__ = "0.1.0"
 
 # importamos las librerias necesarias
 import os
-import sys
 
 from src.config import variables as var
 
 directory = var.directory
 
 # Obtenemos los paths que deben existir antes de correr el programa
-config_folder = os.path.join(directory, "config")
-destination_cod_puerto_destino = os.path.join(config_folder, "cod_puerto_destino.json")
-destination_precios_contrato = os.path.join(config_folder, "precios_contrato.xlsx")
-output_folder = os.path.join(directory, "output")
+datos_folder = os.path.join(directory, "Datos del programa")
+variables_folder = os.path.join(datos_folder, "Variables")
+destination_cod_puerto_destino = os.path.join(variables_folder, "cod_puerto_destino.json")
+destination_precios_contrato = os.path.join(variables_folder, "precios_contrato.xlsx")
+destination_flete_real = os.path.join(variables_folder, "flete_real.xlsx")
+output_folder = os.path.join(datos_folder, "output")
 
 config_paths = [
-    config_folder,
+    variables_folder,
     destination_cod_puerto_destino,
     destination_precios_contrato,
+    destination_flete_real,
 ]
 
 if not all([os.path.exists(path) for path in config_paths]):
@@ -45,14 +47,3 @@ if not os.path.exists(output_folder):
 from src.frontend.gui_ventas import panqueca
 
 panqueca()
-
-
-# If you are coding, make sure to change the following directory to the one where you are coding in, the one that contains __main__.py.
-coding_directory = r"c:\Users\spinc\Desktop\OCHO_FUEGOS"
-# The following will update automatically when running the program. Desired for executable version.
-directory = os.path.dirname(os.path.realpath(sys.argv[0]))
-
-if directory[1:] == coding_directory[1:]:
-    import shutil
-
-    shutil.rmtree(config_folder)

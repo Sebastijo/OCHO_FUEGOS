@@ -44,8 +44,9 @@ formatos_con_CSG = var.formatos_con_CSG
 directory = var.directory
 
 # Cargamos el codigo de puerto destino actualizado
-configuraciones = os.path.join(directory, "config")
-with open(os.path.join(configuraciones, "cod_puerto_destino.json"), "r") as file:
+datos_folder = os.path.join(directory, "Datos del programa")
+variables_folder = os.path.join(datos_folder, "Variables")
+with open(os.path.join(variables_folder, "cod_puerto_destino.json"), "r") as file:
     COD_PUERTO_DESTINO_configuracion = json.load(file)
 COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion
 
@@ -87,6 +88,7 @@ def import_and_check(
     1) facturas: pd.DataFrame
     2) tarifa: pd.DataFrame
     3) precios_contrato: pd.DataFrame
+    4) flete_real: pd.DataFrame
 
     Args:
         embarques_path (str): Path to the embarques Excel file.
@@ -99,7 +101,8 @@ def import_and_check(
         tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: Tuple with the dataframes.
     """
 
-    precios_contrato_path = os.path.join(configuraciones, "precios_contrato.xlsx")
+    precios_contrato_path = os.path.join(variables_folder, "precios_contrato.xlsx")
+    flete_real_path = os.path.join(variables_folder, "flete_real.xlsx")
     try:
         if (
             __name__ == "__main__"
@@ -130,11 +133,6 @@ def import_and_check(
                 )
                 tarifa.to_pickle(tarifa_pickle)
 
-            source_precios_contrato = (
-                r"C:\Users\spinc\Desktop\OCHO_FUEGOS\src\config\precios_contrato.pkl"
-            )
-            precios_contrato = pd.read_pickle(source_precios_contrato)
-
         else:
             embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
             if update_loading_bar:  # 2ra operacion
@@ -145,12 +143,14 @@ def import_and_check(
             tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
             if update_loading_bar:  # 4ra operacion
                 update_loading_bar(1 / total_operations * 100)
-            precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
-            if update_loading_bar:  # 5ta operacion
-                update_loading_bar(1 / total_operations * 100)
+        precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
+        flete_real = pd.read_excel(flete_real_path, dtype=str)
+        if update_loading_bar:  # 5ta operacion
+            update_loading_bar(1 / total_operations * 100)
+
     except Exception as e:
         raise ValueError(
-            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato. El error encontrado es: {e}"
+            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato, flete_real. El error encontrado es: {e}"
         )
 
     # Revisamos las columnas de embarques
@@ -183,7 +183,19 @@ def import_and_check(
         precios_contrato_difference == set()
     ), f"La(s) columna(s) {precios_contrato_difference} no se encuentra(n) en el archivo de precios_contrato."
 
-    return embarques, facturas, tarifa, precios_contrato
+    # Revisamos las columnas de flete_real
+    flete_real_difference = {
+        "AWB - BL",
+        "BRUTOS DOCS",
+        "FLETE AWB",
+        "GASTOS LOCALES PESOS",
+        "GASTOS LOCALES DOLARES",
+    } - set(flete_real.columns)
+    assert (
+        flete_real_difference == set()
+    ), f"La(s) columna(s) {flete_real_difference} no se encuentra(n) en el archivo de flete_real."
+
+    return embarques, facturas, tarifa, precios_contrato, flete_real
 
 
 def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
@@ -257,7 +269,21 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
         else:
             return cell
 
-    columnas_por_sumar = ["CAJAS", "FACT PROFORMA $ TOTAL", "PRECIO CONTRATO"]
+    columnas_por_sumar = [
+        "CAJAS",
+        "FACT PROFORMA $ TOTAL",
+        "PRECIO CONTRATO",
+        "BRUTOS_2",
+        "BRUTOS_2/CJ",
+        "FLETE TOTAL",
+        "FLETE TOTAL/CJ",
+        "GASTOS LOCALES CLP",
+        "GASTOS LOCALES CLP/CJ",
+        "GASTOS LOCALES USD",
+        "GASTOS LOCALES USD/CJ",
+        "FLETE TOTAL 2",
+        "FLETE TOTAL 2/CJ",
+    ]
     for columna in columnas_por_sumar:
         columna_sumada = columna + " SUMADAS"
         pseudocontrol[columna_sumada] = pseudocontrol[columna].apply(sumador_de_tuplas)
@@ -322,7 +348,7 @@ def pseudoControl(
             return np.nan if np.isnan(x) else str(x)
 
     # importamos y revisamos los archivos
-    embarques, facturas, tarifa, precios_contrato = import_and_check(
+    embarques, facturas, tarifa, precios_contrato, flete_real = import_and_check(
         embarques_path, facturas_path, tarifa_path, update_loading_bar, total_operations
     )
 
@@ -338,6 +364,18 @@ def pseudoControl(
     embarques = embarques[list(embarquesDict.values())]
     facturas = facturas[list(facturasDict.values())]
     tarifa = tarifa[list(tarifaDict.values())]
+    precios_contrato = precios_contrato[
+        ["CALIBRES", "KG NET/CAJA", "ETD WEEK", "CLIENTE", "PRECIO CONTRATO $/CAJA"]
+    ]
+    flete_real = flete_real[
+        [
+            "AWB - BL",
+            "BRUTOS DOCS",
+            "FLETE AWB",
+            "GASTOS LOCALES PESOS",
+            "GASTOS LOCALES DOLARES",
+        ]
+    ]
 
     # Agregamos los Freight Costs a embarques
     embarques = pd.merge(embarques, tarifa, on="INSTRUCTIVO", how="left")
@@ -358,6 +396,45 @@ def pseudoControl(
     )
 
     control = pd.merge(control, precios_contrato, on=key_precios_contrato, how="left")
+
+    # Agregamos los datos de flete real
+    columnas_por_crear_flete_real = [
+        "BRUTOS_2",
+        "FLETE TOTAL",
+        "GASTOS LOCALES CLP",
+        "GASTOS LOCALES USD",
+    ]
+    source_columns_flete_real = [
+        "BRUTOS DOCS",
+        "FLETE AWB",
+        "GASTOS LOCALES PESOS",
+        "GASTOS LOCALES DOLARES",
+    ]
+
+    # Transformamos las columna necesarias a number
+    for column in source_columns_flete_real:
+        flete_real[column] = pd.to_numeric(flete_real[column], errors="coerce")
+    for column in {"NETOS", "CAJAS"}:
+        control[column] = pd.to_numeric(control[column], errors="coerce")
+
+    # Las columnas agregadas a continuación, serán borradas eventualmetne
+    control["KG_netos_BL"] = control.groupby("AWB - BL")["NETOS"].transform("sum")
+    control = control.merge(flete_real, on="AWB - BL", how="left")
+
+    # Calculamos las columnas necesarias
+    for column, column_source in zip(
+        columnas_por_crear_flete_real, source_columns_flete_real
+    ):
+        control[column] = (control[column_source] / control["KG_netos_BL"]) * control[
+            "NETOS"
+        ]
+        control[column + "/CJ"] = control[column] / control["CAJAS"]
+
+    control["FLETE TOTAL 2"] = control["FLETE TOTAL"] + control["GASTOS LOCALES USD"]
+    control["FLETE TOTAL 2/CJ"] = control["FLETE TOTAL 2"] / control["CAJAS"]
+
+    # Eliminamos las columnas innecesarias
+    control.drop(columns=["KG_netos_BL", *source_columns_flete_real], inplace=True)
 
     # Calculamos el PRECIO CONTRATO
     control["PRECIO CONTRATO $/CAJA"] = pd.to_numeric(
@@ -489,10 +566,30 @@ def pseudoControl(
         "FACT PROFORMA $ TOTAL SUMADAS",
         "FACT EXPORTACION $/CAJA",
         "FACT EXPORTACION $ TOTAL",
-        "FLETE/kg",
         "PRECIO CONTRATO $/CAJA",
         "PRECIO CONTRATO",
         "PRECIO CONTRATO SUMADAS",
+        "FLETE/kg",
+        "BRUTOS_2",
+        "BRUTOS_2 SUMADAS",
+        "BRUTOS_2/CJ",
+        "BRUTOS_2/CJ SUMADAS",
+        "FLETE TOTAL",
+        "FLETE TOTAL SUMADAS",
+        "FLETE TOTAL/CJ",
+        "FLETE TOTAL/CJ SUMADAS",
+        "GASTOS LOCALES CLP",
+        "GASTOS LOCALES CLP SUMADAS",
+        "GASTOS LOCALES CLP/CJ",
+        "GASTOS LOCALES CLP/CJ SUMADAS",
+        "GASTOS LOCALES USD",
+        "GASTOS LOCALES USD SUMADAS",
+        "GASTOS LOCALES USD/CJ",
+        "GASTOS LOCALES USD/CJ SUMADAS",
+        "FLETE TOTAL 2",
+        "FLETE TOTAL 2 SUMADAS",
+        "FLETE TOTAL 2/CJ",
+        "FLETE TOTAL 2/CJ SUMADAS",
     ]
 
     # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)

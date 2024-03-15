@@ -367,6 +367,26 @@ def control(
             {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
         )
 
+    # Cambiamos el formato de las fechas
+    def convert_to_date(value):
+        try:
+            return pd.to_datetime(value).strftime("%Y-%m-%d")
+        except ValueError:
+            return value
+
+    date_columns = [
+        "FECHA FACTURA",
+        "FECHA DESPACHO PLANTA",
+        "FECHA EMBALAJE",
+        "ETD",
+        "ETA",
+        "ETD REAL",
+        "ETA REAL",
+        "FECHA VENTA",
+    ]
+    for column in date_columns:
+        df_output[0][column] = df_output[0][column].apply(convert_to_date)
+
     return (
         control_df,
         errores,
