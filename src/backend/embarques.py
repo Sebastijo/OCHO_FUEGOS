@@ -89,6 +89,7 @@ def import_and_check(
     2) tarifa: pd.DataFrame
     3) precios_contrato: pd.DataFrame
     4) flete_real: pd.DataFrame
+    5) costo_seco: pd.DataFrame
 
     Args:
         embarques_path (str): Path to the embarques Excel file.
@@ -103,6 +104,7 @@ def import_and_check(
 
     precios_contrato_path = os.path.join(variables_folder, "precios_contrato.xlsx")
     flete_real_path = os.path.join(variables_folder, "flete_real.xlsx")
+    costo_seco_path = os.path.join(variables_folder, "costo_seco.xlsx")
     try:
         if (
             __name__ == "__main__"
@@ -145,12 +147,13 @@ def import_and_check(
                 update_loading_bar(1 / total_operations * 100)
         precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
         flete_real = pd.read_excel(flete_real_path, dtype=str)
+        costo_seco = pd.read_excel(costo_seco_path, dtype=str)
         if update_loading_bar:  # 5ta operacion
             update_loading_bar(1 / total_operations * 100)
 
     except Exception as e:
         raise ValueError(
-            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato, flete_real. El error encontrado es: {e}"
+            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato, flete_real, costo_seco. El error encontrado es: {e}"
         )
 
     # Revisamos las columnas de embarques
@@ -195,7 +198,17 @@ def import_and_check(
         flete_real_difference == set()
     ), f"La(s) columna(s) {flete_real_difference} no se encuentra(n) en el archivo de flete_real."
 
-    return embarques, facturas, tarifa, precios_contrato, flete_real
+    # Revisamos las columnas de costo_seco
+    costo_seco_difference = {
+        "TIPO DE EMBARQUE",
+        "KG NET/CAJA",
+        "COSTO SECO/KG",
+    } - set(costo_seco.columns)
+    assert (
+        costo_seco_difference == set()
+    ), f"La(s) columna(s) {costo_seco_difference} no se encuentra(n) en el archivo de costo_seco."
+
+    return embarques, facturas, tarifa, precios_contrato, flete_real, costo_seco
 
 
 def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
@@ -326,7 +339,7 @@ def pseudoControl(
 
     def simplify_decimal(x: float) -> str:
         """
-        Simplify a decimal number to a string.
+        Formato para la columna KG NET/CAJA
         """
         if isinstance(x, str):
             # Extract the expression from the string
@@ -348,8 +361,14 @@ def pseudoControl(
             return np.nan if np.isnan(x) else str(x)
 
     # importamos y revisamos los archivos
-    embarques, facturas, tarifa, precios_contrato, flete_real = import_and_check(
-        embarques_path, facturas_path, tarifa_path, update_loading_bar, total_operations
+    embarques, facturas, tarifa, precios_contrato, flete_real, costo_seco = (
+        import_and_check(
+            embarques_path,
+            facturas_path,
+            tarifa_path,
+            update_loading_bar,
+            total_operations,
+        )
     )
 
     # Traducimos
@@ -376,6 +395,7 @@ def pseudoControl(
             "GASTOS LOCALES DOLARES",
         ]
     ]
+    costo_seco = costo_seco[["TIPO DE EMBARQUE", "KG NET/CAJA", "COSTO SECO/KG"]]
 
     # Agregamos los Freight Costs a embarques
     embarques = pd.merge(embarques, tarifa, on="INSTRUCTIVO", how="left")
@@ -435,6 +455,10 @@ def pseudoControl(
 
     # Eliminamos las columnas innecesarias
     control.drop(columns=["KG_netos_BL", *source_columns_flete_real], inplace=True)
+
+    # Agregamos los datos de costo seco
+    costo_seco["KG NET/CAJA"] = costo_seco["KG NET/CAJA"].apply(simplify_decimal)  
+    control = pd.merge(control, costo_seco, on=["TIPO DE EMBARQUE", "KG NET/CAJA"], how="left")
 
     # Calculamos el PRECIO CONTRATO
     control["PRECIO CONTRATO $/CAJA"] = pd.to_numeric(
@@ -590,6 +614,7 @@ def pseudoControl(
         "FLETE TOTAL 2 SUMADAS",
         "FLETE TOTAL 2/CJ",
         "FLETE TOTAL 2/CJ SUMADAS",
+        "COSTO SECO/KG",
     ]
 
     # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)

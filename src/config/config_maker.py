@@ -30,6 +30,8 @@ source_precios_contrato = os.path.join(NO_TOCAR_folder, "precios_contrato.pkl")
 destination_precios_contrato = os.path.join(variables_folder, "precios_contrato.xlsx")
 source_flete_real = os.path.join(NO_TOCAR_folder, "flete_real.pkl")
 destination_flete_real = os.path.join(variables_folder, "flete_real.xlsx")
+source_costo_seco = os.path.join(NO_TOCAR_folder, "costo_seco.pkl")
+destination_costo_seco = os.path.join(variables_folder, "costo_seco.xlsx")
 
 
 def no_se_encuentran_los_archivos_de_NO_TOCAR() -> bool:
@@ -108,6 +110,9 @@ def make_config():
         # Creamos el Excel con el flete real
         flete_real_df = pd.read_pickle(source_flete_real)
         flete_real_df.to_excel(destination_flete_real, index=False)
+        # Creamos el Excel de costo seco
+        costo_seco_df = pd.read_pickle(source_costo_seco)
+        costo_seco_df.to_excel(destination_costo_seco, index=False)
     else:
         # Si falta alguno de los contenidos de la carpeta de configuración, los creamos
         if not os.path.exists(destination_cod_puerto_destino):
@@ -118,3 +123,6 @@ def make_config():
         if not os.path.exists(destination_flete_real):
             flete_real_df = pd.read_pickle(source_flete_real)
             flete_real_df.to_excel(destination_flete_real, index=False)
+        if not os.path.exists(destination_costo_seco):
+            costo_seco_df = pd.read_pickle(source_costo_seco)
+            costo_seco_df.to_excel(destination_costo_seco, index=False)

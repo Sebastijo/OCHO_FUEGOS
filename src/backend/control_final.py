@@ -387,6 +387,11 @@ def control(
     for column in date_columns:
         df_output[0][column] = df_output[0][column].apply(convert_to_date)
 
+    control_order = [
+        col for col in control_df.columns if col not in ["COSTO SECO/KG"]
+    ] + ["COSTO SECO/KG"]
+    control_df = control_df[control_order]
+
     return (
         control_df,
         errores,
