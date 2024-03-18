@@ -216,6 +216,21 @@ main_list_liq_HFF = [
     "美金",
 ]
 
+main_list_liq_HFF_SEA = {
+    "观察": "观察",
+    "到货数量": "到货数量",
+    "品种": "品种",
+    "版号": "版号",
+    "重量": "重量",
+    "规格": "尺寸",
+    "销售日期": "日期",
+    "销售数量": "销售数量",
+    "单价": "单价",
+    "金额": "金额",
+    "美金": "美金",
+    # "每箱收益 FOB FOB Return",
+}
+
 # key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG en control_final para el merge
 key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 

@@ -5,9 +5,16 @@ Los tipos de liquidaciones disponibles son:
     - 12Islands (.pdf)
     - JumboFruit (.xlsx)
     - 8F (.xlsx)
+    - Happy Farm Fruit (.xlsx)
 
 El resultado de el módulo es producir una lista de listas, cada lista representando un embarque y los elementos de la lista representadno los diversos datos presentes en un embarque.
-JumboFruit y 8F usarán la misma función de interpretación, mientras que 12Islands usará una función distinta.
+Cada formato tendrá su función que lo traduce. Los formatos se relacionan de la siguiente manera.
+
+-
+-Happy Farm Fruit (HFF) es traducido al formato standard 8F.
+-Jumbo Fruit (BQ) es traducido al formmato standard 8F.
+-El formato standard 8F es traducido al formato 12Islands.
+
 Empresa: Ocho Fuegos
 Autor: Sebastián P. Pincheira
 Fecha: 10/01/2024
@@ -39,9 +46,10 @@ else:
 main_dict_liq_standard = var.main_dict_liq_standard
 main_dict_liq_JF = var.main_dict_liq_JF
 main_list_liq_HFF = var.main_list_liq_HFF
+main_list_liq_HFF_SEA = var.main_list_liq_HFF_SEA
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_SEA_8F- Liquidation- INST 113- Seaspan Raptor-MEDU9767315.xlsx"
     # example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\070. Liquidation-品牌-8F  柜号 TTNU-8361862.xlsx"
 
 
@@ -505,22 +513,18 @@ def interpreter_JF(liquidacion: str) -> pd.DataFrame:
     return interpreter_standard(liquidacion_df)
 
 
-def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
+def interpreter_HFF_SEA(liquidacion: str) -> pd.DataFrame:
     """
-    Esta función tiene como objetivo ajustar el formato de la liquidacion de HFF al formato standard para luego ser usados en liquidacion_standard.
+    Esta función tiene como objetivo ajustar el formato de la liquidacion de HFF SEA al formato HFF para luego ser usados en liquidacion_HFF.
 
     Args:
         liquidacion (str): Ruta del archivo de liquidación.
 
-    Returns:
-        pd.DataFrame: DataFrame con el formato de liquidacion standard.
+    Return:
+        pd.DataFrame: DataFrame con el formato de liquidacion HFF.
 
     Raises:
-        AssertionError: Si el archivo de liquidación no existe, no es un archivo o no es un archivo .pdf o .xlsx.
-        AssertionError: Si la tabla principal no fue encontrada en el archivo .xlsx.
-        AssertionError: Si las columnas de la tabla principal del archivo .xlsx no son las correctas.
-        AssertionError: Si la fila de totales no fue encontrada en el archivo .xlsx.
-        AssertionError: Si la posición de comission no se encuentra en los indices de las columnas de costo.
+        AssertionError: Si el archivo de liquidación no existe, no es un archivo o no es un archivo .xlsx o .xls.
     """
     assert os.path.exists(liquidacion), f"El archivo '{liquidacion}' no existe."
     assert os.path.isfile(liquidacion), f"El archivo '{liquidacion}' no es un archivo."
@@ -528,9 +532,130 @@ def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
         (".xlsx", ".xls")
     ), f"El archivo '{liquidacion}' no es un archivo .xlsx o .xls."
 
+    RMB_to_USD = 7.30
+
     # Leemos el archivo
     liquidacion_df = pd.read_excel(liquidacion, dtype=str)
 
+    # Encontramos la tabla main
+    assert (
+        "货品" in liquidacion_df.iloc[:, 0].values
+    ), f"La tabla principal no fue encontrada en el archivo {liquidacion}: no existe la columna '{'货品'}' en la columna 1 del archivo .xlsx."
+    main_location = liquidacion_df[liquidacion_df.iloc[:, 0] == "货品"].index[0]
+    liquidacion_df = liquidacion_df.iloc[main_location:].reset_index(drop=True)
+
+    # Establecemos los nombres de las columnas como la primera fila
+    # Arreglamos el nombre de la columna "每箱收益 FOB FOB Return": la eliminamos
+    liquidacion_df.columns = liquidacion_df.iloc[0]
+    assert (
+        liquidacion_df.columns[-2] == "金额"
+    ), f"No se encontró la columna FOB en la liquidación {liquidacion}."
+    duplicate_column = liquidacion_df["金额"].copy()
+    duplicate_column = duplicate_column.iloc[:, 0]
+    liquidacion_df.drop(columns="金额", inplace=True)
+    liquidacion_df = pd.concat([liquidacion_df, duplicate_column], axis=1)
+    liquidacion_df["到货数量"] = np.nan
+    liquidacion_df["金额"] = pd.to_numeric(liquidacion_df["金额"], errors="coerce")
+    liquidacion_df["美金"] = liquidacion_df["金额"].apply(
+        lambda x: (
+            str(
+                "{:.2f}".format(round(float(x) / RMB_to_USD, 2)).rstrip("0").rstrip(".")
+            )
+            if not str(x) in ["金额", "Total（RMB）", str(np.nan)]
+            else (
+                "美金"
+                if x == "金额"
+                else "Total（USD）" if x == "Total（RMB）" else np.nan
+            )
+        )
+    )
+    liquidacion_df["金额"] = liquidacion_df["金额"].astype(str)
+    liquidacion_df["美金"] = liquidacion_df["美金"].astype(str)
+    assert set(list(main_list_liq_HFF_SEA.keys())).issubset(
+        set(liquidacion_df.columns)
+    ), f"Las columnas de la tabla principal del archivo {liquidacion} no son las correctas. Deben ser {list(main_list_liq_HFF_SEA)}."
+    liquidacion_df = liquidacion_df[list(main_list_liq_HFF_SEA.keys())]
+    liquidacion_df.rename(columns=main_list_liq_HFF_SEA, inplace=True)
+
+    # Buscamos la columna cost
+    assert (
+        len(
+            [
+                value
+                for value in liquidacion_df["销售数量"].values
+                if "commission" in str(value).lower()
+            ]
+        )
+        > 0
+    ), f"La fila de commission no fue encontrada en el archivo {liquidacion}: no existe la fila '{'commission'}' en la columna {'销售数量'} del archivo .xlsx."
+    for index, value in liquidacion_df["销售数量"].items():
+        if "commission" in str(value).lower():
+            # If "commission" is found, print the index and break the loop
+            commission_location = index
+            summary_location = commission_location - 1
+            break
+
+    cost = liquidacion_df.iloc[summary_location + 1 :].copy()
+    main = liquidacion_df.iloc[: summary_location + 1].copy()
+
+    main["到货数量"] = main["销售数量"]
+    last_index = main["尺寸"].index[-1]
+    main.at[last_index, "观察"] = "total"
+    columns_to_sum = {"到货数量", "销售数量"}
+    for column in columns_to_sum:
+        main.at[last_index, column] = pd.to_numeric(
+            main[column][2:-1], errors="coerce"
+        ).sum()
+        main[column] = main[column].astype(str)
+        main[column] = main[column].apply(
+            lambda x: str(x).rstrip("0").rstrip(".") if "." in str(x) else str(x)
+        )
+    main.at[last_index, "尺寸"] = np.nan
+
+    cost["尺寸"] = np.nan
+    cost["单价"] = np.nan
+    cost = cost.iloc[:-1]
+
+    liquidacion_df = pd.concat([main, cost])
+    liquidacion_df.iloc[0] = liquidacion_df.columns
+
+    return liquidacion_df
+
+
+def interpreter_HFF(liquidacion: Union[str, pd.DataFrame]) -> pd.DataFrame:
+    """
+    Esta función tiene como objetivo ajustar el formato de la liquidacion de HFF al formato standard para luego ser usados en liquidacion_standard.
+
+    Args:
+        liquidacion (str or pd.DataFrame): Ruta del archivo de liquidación o DataFrame con la liquidación.
+
+    Returns:
+        pd.DataFrame: DataFrame con el formato de liquidacion standard.
+
+    Raises:
+        AssertionError: Si liquidacion no es str o pd.DataFrame.
+        AssertionError: Si el archivo de liquidación no existe, no es un archivo o no es un archivo .pdf o .xlsx.
+        AssertionError: Si la tabla principal no fue encontrada en el archivo .xlsx.
+        AssertionError: Si las columnas de la tabla principal del archivo .xlsx no son las correctas.
+        AssertionError: Si la fila de totales no fue encontrada en el archivo .xlsx.
+        AssertionError: Si la posición de comission no se encuentra en los indices de las columnas de costo.
+    """
+    assert isinstance(
+        liquidacion, (str, pd.DataFrame)
+    ), f"El argumento liquidacion debe ser un string o un DataFrame, no {type(liquidacion)}."
+    if isinstance(liquidacion, str):
+        assert os.path.exists(liquidacion), f"El archivo '{liquidacion}' no existe."
+        assert os.path.isfile(
+            liquidacion
+        ), f"El archivo '{liquidacion}' no es un archivo."
+        assert liquidacion.endswith(
+            (".xlsx", ".xls")
+        ), f"El archivo '{liquidacion}' no es un archivo .xlsx o .xls."
+
+        # Leemos el archivo
+        liquidacion_df = pd.read_excel(liquidacion, dtype=str)
+    else:
+        liquidacion_df = liquidacion
     # Encontramos la tabla main
     assert (
         "观察" in liquidacion_df.iloc[:, 0].values
@@ -540,8 +665,8 @@ def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
 
     # Establecemos los nombres de las columnas como la primera fila
     liquidacion_df.columns = liquidacion_df.iloc[0]
-    assert set(main_list_liq_HFF).issubset(
-        set(liquidacion_df.columns)
+    assert (
+        set(main_list_liq_HFF) - set(liquidacion_df.columns) == set()
     ), f"Las columnas de la tabla principal del archivo {liquidacion} no son las correctas. Deben ser {list(main_list_liq_HFF)}."
     liquidacion_df = liquidacion_df[main_list_liq_HFF]
 
@@ -570,6 +695,7 @@ def interpreter_HFF(liquidacion: str) -> pd.DataFrame:
     liquidacion_df = pd.concat([main, cost])
 
     return interpreter_standard(liquidacion_df)
+
 
 def interpreter(liquidacion: str) -> tuple[list, list]:
     """
@@ -610,6 +736,8 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
     elif filename.startswith("BQ"):
         liquidacion_list = interpreter_JF(liquidacion)
     elif filename.startswith("HFF"):
+        if filename[4:].startswith("SEA"):
+            liquidacion = interpreter_HFF_SEA(liquidacion)
         liquidacion_list = interpreter_HFF(liquidacion)
 
     return liquidacion_list
