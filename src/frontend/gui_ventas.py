@@ -31,7 +31,6 @@ if __name__ == "__main__":
     from src.frontend.error_window import inputErrorWindow, revisarWindow
     from src.backend.control_final import control
     from src.frontend.ventana import Ventana
-    from src.backend.output_doc_maker import export
 else:
     from .file_select import BarraBusqueda
     from .buttons import Boton
@@ -40,17 +39,11 @@ else:
     from .error_window import inputErrorWindow, revisarWindow
     from ..backend.control_final import control
     from .ventana import Ventana
-    from ..backend.output_doc_maker import export
 
-    # Variables universales:
-    bg = var.bg  # Color de fondo
-    fg = var.fg  # Color de texto
-    title = var.title  # Título de la ventana principal
-    directory = var.directory  # Directorio de trabajo
-
-    datos_folder = os.path.join(directory, "Datos del programa")
-    control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
-
+# Obtenemos los paths que deben existir antes de correr el programa
+directory = var.directory
+datos_folder = os.path.join(directory, "Datos del programa")
+output_folder = os.path.join(datos_folder, "output")
 
 def panqueca():
     """
@@ -58,13 +51,17 @@ def panqueca():
 
     Args:
         None
-
+    
     Returns:
         None
-
+    
     Raises:
         None
     """
+    # Variables universales:
+    bg = var.bg  # Color de fondo
+    fg = var.fg  # Color de texto
+    title = var.title  # Título de la ventana principal
 
     # Creación de la ventana principal utilizando tkinter
     ventana = Ventana(titulo=title["main"], DnD=True)
@@ -89,6 +86,7 @@ def panqueca():
             row=idx, column=0
         )  # Montamos la barra de busqueda en el frame
 
+
     # Acción del botón de ejecución
     def runVentas() -> None:
         """
@@ -96,35 +94,59 @@ def panqueca():
         """
         ejecutar.disable()
         # Guardamos los paths de los archivos seleccionados
-        inputPaths = (
-            {}
-        )  # Diccionario que contiene los paths de los archivos seleccionados
+        inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
         for tipo in barrasBusqueda:
-            inputPaths[tipo] = (
-                barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
-            )
+            inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
 
         # Ejecutamos el programa de ventas
         try:
-            control_df, errores, revisar, liquidaciones_no_pareadas, no_vendidos = (
-                control(
-                    inputPaths["embarques"],
-                    inputPaths["facturas"],
-                    inputPaths["tarifas"],
-                    inputPaths["liquidaciones"],
-                )
+            control_df, errores, revisar = control(
+                inputPaths["embarques"],
+                inputPaths["facturas"],
+                inputPaths["tarifas"],
+                inputPaths["liquidaciones"],
             )
         except Exception as e:
             inputErrorWindow(root, e)
             ejecutar.enable()
             return
 
+        # Ubicación donde se guarde el control de embarques
+        control_path = os.path.join(output_folder, "control.xlsx")
+
         # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
 
-        # Exportamos los resultados a la carpeta de outputs
-        export(control_df, liquidaciones_no_pareadas, no_vendidos)
+        # Creamos el Excel de output
+        if os.path.exists(control_path):  # Si el archivo existe, lo borramos
+            os.remove(control_path)
+        writer = pd.ExcelWriter(control_path, engine="xlsxwriter")
 
+        # Convert the dataframe to an XlsxWriter Excel object. Note that we turn off
+        # the default header and skip one row to allow us to insert a user defined
+        # header. Also remove index values by index=False
+        control_df.to_excel(
+            writer, sheet_name="Sheet1", startrow=1, header=False, index=False
+        )
+
+        workbook = writer.book
+        worksheet = writer.sheets["Sheet1"]
+        # Add a header format.
+        header_format = workbook.add_format(
+            {"bold": True, "fg_color": "#6FAAFF", "border": 1}
+        )
+        for col_num, value in enumerate(control_df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+
+            column_len = control_df[value].astype(str).str.len().max()
+            # Setting the length if the column header is larger
+            # than the max column value length
+            column_len = max(column_len, len(value)) + 3
+            # set the column length
+            worksheet.set_column(col_num, col_num, column_len)
+
+        # Close the Pandas Excel writer and output the Excel file.
+        writer.close()
         # Cambiamos el texto de los outputs
         output[0].configure(
             text=f"El resultado se encuentra disponible en\r {control_path}"
@@ -147,6 +169,7 @@ def panqueca():
         # loading_bar.stop()  # Detenemos la barra de progreso
         # loading_bar.pack_forget()  # Ocultamos la barra de progreso
         return
+
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
@@ -172,38 +195,17 @@ def panqueca():
     frameFinalButtons = tk.Frame(frameFinalButtonsAndBar, bd=4, bg=bg["window"])
     info = InfoBoton(
         frameFinalButtons,
-        """
-        Este programa te permite gestionar información crucial de embarques, facturas, tarifas y liquidaciones mediante una práctica base de formato Excel. Sigue estos simples pasos:
-
-        1. Configuración Inicial:
-        - Dirígete a la ubicación del programa en tu dispositivo y asegúrate de que la carpeta 'config' contenga los archivos esperados.
-        - Puedes ajustar los contenidos de la carpeta 'config' según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
-        - Si la carpeta 'config' se corrompe, bórrala y vuelve a ejecutar el programa para restablecerla con los valores predeterminados.
-
-        2. Cargar Archivos:
-        - Arrastra tus archivos a las áreas correspondientes en el menú principal.
-        - La barra para subir liquidaciones acepta formatos como Excel, PDF o una carpeta que contenga estos documentos.
-        - Formatos de liquidaciones admitidos: 12Islands (.pdf), JumboFruit (comienza con 'BQ'), Happy Farm Fruit (comienza con 'HFF'), y formato estándar (comienza con '8F').
-        - Presiona 'Ejecutar' después de cargar tus archivos y espera a que el programa los procese.
-
-        3. Resultados:
-        - Una vez completado, encontrarás el resultado en la carpeta 'outputs' junto con un informe de errores en esta interfaz.
-        - El informe incluye liquidaciones no leídas y embarques con inconsistencias.
-        - Liquidaciones no leídas: errores de formato en el input.
-        - Inconsistencias en liquidaciones: problemas en el contenido (por ejemplo, comisiones incorrectas).
-
-        4. Salida Final:
-        - La carpeta 'outputs' contendrá un Excel con tres hojas: Base de Control, Liquidaciones no Pareadas y No Vendidos.
-        - Liquidaciones no pareadas: no asociadas a ningún embarque de la base de embarques.
-        - No vendidos: embarques cuyas unidades se venden a $0 USD.
-
-        5. Soporte y Contacto:
-        - Para agregar un nuevo formato, actualizar el programa o para cualquier necesidad adjacente a la ingeniería o a la ingeniería matemática, no dude en contactar al desarrollador (datos disponibles al final de esta ventana).
-        """,
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet."
+        + " Proin gravida dolor sit amet lacus accumsan et viverra justo commodo."
+        + " Proin sodales pulvinar tempor. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus."
+        + " Nam fermentum, nulla luctus pharetra vulputate,"
+        + " Felis tellus mollis orci, sed rhoncus sapien nunc eget odio. Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+        + " Aenean euismod bibendum laoreet. Proin gravida.",
     )  # Boton de información sobre el programa
     ejecutar = Boton(
         frameFinalButtons, "Ejecutar", lambda: print("Ejecutar"), "output_button"
     )  # Botón de ejecución
+
 
     # Boton que cierra el programa, eliminando los threads abiertos
     def quitter():
@@ -211,6 +213,7 @@ def panqueca():
         #    if thread != threading.main_thread():
         #        thread.join()
         root.quit()
+
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
     # Create and configure the progress bar
@@ -246,6 +249,7 @@ def panqueca():
 
     # Hacer una función que una los threads y cierre la GUI. !!!!!
 
+
     # Definimos el command del boton ejecutar
     ejecutar.configure(command=runVentas)
 
@@ -258,6 +262,7 @@ def panqueca():
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
+
 
     # Inicio del bucle principal para la ejecución de la interfaz gráfica
     root.mainloop()

@@ -83,20 +83,9 @@ def infoWindow(info: str, window: tk.Tk) -> None:
     datosLabel2.pack(anchor=tk.W)
     datosLabel3.pack(anchor=tk.W)
     # errorWindowExit.pack()
-
-    # Create a Scrollbar
-    scrollbar = tk.Scrollbar(errorWindowLabel)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-    cleaned_text = "\n".join(line.lstrip() for line in say.splitlines())
-    content = tk.Text(
-        errorWindowLabel, yscrollcommand=scrollbar.set, wrap=tk.WORD, font=30, bg=background, fg="#DDDDDD"
-    )
-    content.insert(tk.END, cleaned_text)
-    content.config(state=tk.DISABLED)
-    content.pack(side=tk.LEFT, fill=tk.BOTH)
-
-    scrollbar.config(command=content.yview)
+    tk.Label(
+        errorWindowLabel, text=say, wraplength=800, font=30, bg=background, fg="#DDDDDD"
+    ).pack()
 
     exitFrame.pack(anchor=tk.W)
     errorWindowButton = tk.Button(

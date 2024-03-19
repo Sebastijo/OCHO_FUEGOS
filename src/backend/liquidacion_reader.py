@@ -32,15 +32,15 @@ else:
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq
-key_liq = var.key_liq
-key_liq_incompleto = var.key_liq_incompleto
 
 if __name__ == "__main__":
     # Path to the liquidaciones folder
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
+    liquidacion = (
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester.pdf"
+    )
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -106,6 +106,7 @@ def embarques_three_tables(
         # Remove leading spaces and replace leading slash in column names
         df.columns = df.columns.str.strip().str.replace("^/", "", regex=True)
         # Remove leading spaces in DataFrame content
+        # df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x) // depricated
         df = df.apply(
             lambda x: x.map(
                 lambda element: element.strip() if isinstance(element, str) else element
@@ -191,6 +192,7 @@ def embarques_three_tables(
             else:
                 # Si no es ninguna de las anteriores, el formato no es válido
                 formato_valido = False
+
         # REVISAMOS ERRORES Y CORREGIMOS FORMATO:
 
         # Revisamos si hay algún elemento de embarque_ no esté definido
@@ -297,19 +299,16 @@ def embarques_three_tables(
             embarque_["cost"] = embarque_["cost"].replace("nan", np.nan)
             # Eliminamos elementos sin cajas de main
             embarque_["main"] = embarque_["main"].dropna(subset=["CAJAS LIQUIDADAS"])
-            # Asignamos valores de los elementos que les pueda faltar
-            columns_to_fill = {"KG NET/CAJA", "VARIEDAD", "CALIBRES"}
-            for column in columns_to_fill:
-                if embarque_["main"][column].isna().any():
-                    column_values = embarque_["main"][column].dropna()
-                    if len(column_values.unique()) == 1:
-                        common_value = column_values.iloc[0]
-                        embarque_["main"][column] = embarque_["main"][column].fillna(
-                            common_value
-                        )
-                    elif column == "KG NET/CAJA":
-                        formato_valido = False
-
+            # Asignamos el KG NET/CAJA de los elementos que les pueda faltar
+            if embarque_["main"]["KG NET/CAJA"].isna().any():
+                column_values = embarque_["main"]["KG NET/CAJA"].dropna()
+                if len(column_values.unique()) == 1:
+                    common_value = column_values.iloc[0]
+                    embarque_["main"]["KG NET/CAJA"] = embarque_["main"][
+                        "KG NET/CAJA"
+                    ].fillna(common_value)
+                else:
+                    formato_valido = False
         if formato_valido:
             try:
                 # Los pesos como numeros
@@ -444,14 +443,6 @@ def feature_engine(embarque: embarqueL) -> None:
         embarque.main["COMISION/CJ"] / embarque.main["KG NET/CAJA"]
     )
 
-    # Establecemos los KG NET/CAJA como strings en un formato compatible con base embarues
-    embarque.main["KG NET/CAJA"] = (
-        embarque.main["KG NET/CAJA"]
-        .astype(float)
-        .astype(str)
-        .apply(lambda x: x.rstrip("0").rstrip("."))
-    )
-
     # Agregamos columna COSTO Y COMISION
     embarque.main["COSTO Y COMISION"] = (
         embarque.main["COMISION"] + embarque.main["COSTO"]
@@ -468,8 +459,7 @@ def liquidaciones(
     folder: str, update_loading_bar: callable = None, total_operations: int = None
 ) -> tuple[list, dict, dict]:
     """
-    Recieves a path to an Excel file or PDF file containing the liquidactions in the format of Happy Farm Fruit, Jumbo Fruit, 12Islands, or standard.
-    The function returns a tuple with three coordinates:
+    Takes a PDF folder with the liquidations in the format of 12Islands as multiple PDFs.
     Returns a tuple:
 
     0) A list of embarqueL, the n-th element of the list is an embarqueL corresponding to the n-th embarque in folder.
@@ -563,11 +553,6 @@ def liquidaciones(
         # Agregamos las columnas pertinentes
         feature_engine(embarque)
 
-        # Solo mayusculas en los valores de las columnas key (y en formato str)
-        keys = key_liq if embarque.CSG else key_liq_incompleto
-        for key in keys:
-            embarque.main[key] = embarque.main[key].astype(str).str.upper()
-
         # Agregamos el embarque a la lista de embarques_
         embarques_.append(embarque)
 
@@ -575,7 +560,7 @@ def liquidaciones(
 
 
 if __name__ == "__main__":
-    embarques, errores, revisar = liquidaciones(liquidacion)
+    embarques, errores, revisar = liquidaciones(folder)
 
     if len(embarques) > 0:
         print("Main del último embarque:")
@@ -598,4 +583,4 @@ if __name__ == "__main__":
     print(errores)
     print()
     print("Por revisar:")
-    print(revisar)
+    print(revisar)   

@@ -27,12 +27,12 @@ else:
 if __name__ == "__main__":
     # Paths to your input files
     embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Base embarques.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
     )
     facturas_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Facturas proformas.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
     )
-    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Tarifas.xlsx"
+    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
 
     liquidaciones_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
@@ -56,13 +56,64 @@ key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
 
 
+def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
+    """
+    Recibe un (DataFrame del tipo entregado por la función) pseudoControl y devuelve el DataFrame con los siguientes cambios:
+    - Deja un único elemento por cada key_liq (elimina los duplicados).
+    - El representante de cada key_liq, en cada feature donde haya habido una diferencia entre los duplicados, se convierte a una tupla con el valor de la columna de cada representante.
+    - La cantidad de cajas, "CAJAS", siempre es una tupla con la cantidad de cajas de cada representante.
+    - Se agrega una columna a la derecha de "CAJAS", "CAJAS TOTALES", con la suma de las cajas de cada representante.
+
+    Args:
+        df (pd.DataFrame): DataFrame del tipo entregado por la función pseudoControl.
+
+    Returns:
+        pd.DataFrame: DataFrame con los cambios especificados.
+
+    Raises:
+        AssertionError: Si el input no es un DataFrame.
+    """
+    assert isinstance(
+        pseudocontrol, pd.DataFrame
+    ), f"El input '{pseudocontrol}' no es un DataFrame. En la función 'simplifier'. No se pudieron unir los pallets repetidos."
+
+    def unioner(df):
+        """
+        Recibe un DataFrame y lo reduce a un solo representante (fila). Si hay diferencias entre los representantes, estas se convierten a tuplas.
+        Si existe una columna con el nombre "CAJAS", la columna siempre se convierte en una tupla con la canidad de cajas de cada representante.
+        """
+        simp_df_data = {}
+        # Reducimos todas las filas a una sola fila, con cada elemento, de haber diferencias o ser CAJAS, convertido a una tupla.
+        for column in df.columns:
+            value = tuple(df[column].tolist())
+            value = tuple(
+                None if isinstance(x, (int, float)) and np.isnan(x) else x
+                for x in value
+            )
+            if (
+                (column != "CAJAS" and all(elem == value[0] for elem in value))
+                or len(value) == 1
+                or all(x is np.nan for x in value)
+            ):
+                value = value[0]
+            simp_df_data[column] = [value]
+        simp_df = pd.DataFrame(simp_df_data)
+
+        return simp_df
+
+    # Reducimos el DataFrame a un solo representante por key_liq
+    pseudocontrol = pseudocontrol.groupby(key_liq).apply(unioner).reset_index(drop=True)
+
+    return pseudocontrol
+
+
 def control(
     embarques_path: str,
     facturas_path: str,
     tarifa_path: str,
     liquidaciones_path: str,
     update_loading_bar: callable = None,
-) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, dict, dict]:
     """
     Recibe los paths de los archivos de embarques (.xlsx), facturas (.xlsx), tarifa (.xlsx) y liquidaciones (folder)
     devuelve una tupla conteniendo:
@@ -70,8 +121,6 @@ def control(
     0) Un dataframe con el control final
     1) Un diccionario con los errores de liquidación
     2) Un diccionario con los elementos que necesitan ser revisados
-    3) Liquidaciones no pareadas
-    4) No vendidos
 
     Args:
         embarques_path (str): path del archivo de embarques
@@ -80,7 +129,7 @@ def control(
         liquidaciones_path (str): path del folder de liquidaciones
 
     Returns:
-        tuple[pd.DataFrame, dict, dict, pd.DataFrame, pd.DataFrame]: Un dataframe con el control final y un diccionario con los errores de liquidación
+        tuple[pd.DataFrame, dict, dict]: Un dataframe con el control final y un diccionario con los errores de liquidación
 
     Raises:
         AssertionError: Si alguno de los paths no es un string o no existe.
@@ -179,12 +228,19 @@ def control(
         if update_loading_bar:  # 6ta operacion
             update_loading_bar(1 / total_operations * 100)
 
+    # Simplificamos filas repetidas
+    pseudo_control = simplifier(pseudo_control)
+
+    # Calculamos las cantidad d ecajas y las guardamos en una columna al lado de CAJAS
+    cajas_totales = lambda cell: sum(cell) if type(cell) == tuple else cell
+    pseudo_control["CAJAS TOTALES"] = pseudo_control["CAJAS"].apply(cajas_totales)
+    cajas_totales_column = pseudo_control.pop("CAJAS TOTALES")
+    cajas_index = pseudo_control.columns.get_loc("CAJAS")
+    pseudo_control.insert(cajas_index + 1, "CAJAS TOTALES", cajas_totales_column)
+
     # Separamos las liquidaciones con y sin CSG
     liq_con_CSG = []
     liq_sin_CSG = []
-    liquidaciones_no_pareadas = pd.DataFrame()
-    no_vendidos = pd.DataFrame()
-    null_checker = lambda x: x in {0, "0"} or (isinstance(x, float) and np.isnan(x))
     for embarques in liquidacion:
         if embarques.CSG:
             liq_con_CSG.append(embarques.main)
@@ -217,125 +273,32 @@ def control(
         ]:
             control_df[column] = None
     else:
-        no_vendidos_con_CSG = pd.DataFrame()
-        no_vendidos_sin_CSG = pd.DataFrame()
-        liquidaciones_sin_CSG_no_pareadas = pd.DataFrame()
-        liquidaciones_con_CSG_no_pareadas = pd.DataFrame()
-
         for liquidacion in liq_con_CSG + liq_sin_CSG:
             liquidacion["KG NET/CAJA"] = liquidacion["KG NET/CAJA"].astype(str)
 
         # Concatenamos las liquidaciones con y sin CSG
         if len(liq_con_CSG) > 0:  # Si hay liquidaciones con CSG
             liquidacion_con_CSG = pd.concat(liq_con_CSG)
-            # Removemos los no vendidos
-            no_vendidos_con_CSG = liquidacion_con_CSG[
-                liquidacion_con_CSG["RMB/CJ"].apply(null_checker)
-            ]
-            liquidacion_con_CSG = liquidacion_con_CSG[
-                ~liquidacion_con_CSG["RMB/CJ"].apply(null_checker)
-            ]
             control_df = pseudo_control.merge(
                 liquidacion_con_CSG,
                 how="left",
                 on=key_liq,
             )
-
-            # Obtenemos las liquidaciones con CSG no pareadas
-            liquidaciones_con_CSG_no_pareadas = liquidacion_con_CSG.merge(
-                pseudo_control, how="left", on=key_liq, indicator=True
-            )
-            liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
-                list(liquidacion_con_CSG.columns).append("_merge")
-            ]
-            liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
-                liquidaciones_con_CSG_no_pareadas["_merge"] == "left_only"
-            ]
-
             if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
-                # Removemos los no vendidos
-                no_vendidos_sin_CSG = liquidacion_sin_CSG[
-                    liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-                ]
-                liquidacion_sin_CSG = liquidacion_sin_CSG[
-                    ~liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-                ]
                 control_df = control_df.merge(
                     liquidacion_sin_CSG,
                     how="left",
                     on=key_liq_incompleto,
                     suffixes=("_con", "_sin"),
                 )
-
-                # Obtenemos las liquidaciones sin CSG no pareadas
-                liquidaciones_sin_CSG_no_pareadas = liquidacion_sin_CSG.merge(
-                    pseudo_control, how="left", on=key_liq_incompleto, indicator=True
-                )
-                liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
-                    list(liquidacion_sin_CSG.columns).append("_merge")
-                ]
-                liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
-                    liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
-                ]
-
         else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
-            # Removemos los no vendidos
-            no_vendidos_sin_CSG = liquidacion_sin_CSG[
-                liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-            ]
-            liquidacion_sin_CSG = liquidacion_sin_CSG[
-                ~liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-            ]
             control_df = pseudo_control.merge(
                 liquidacion_sin_CSG,
                 how="left",
                 on=key_liq_incompleto,
             )
-
-            # Obtenemos las liquidaciones sin CSG no pareadas
-            liquidaciones_sin_CSG_no_pareadas = liquidacion_sin_CSG.merge(
-                pseudo_control, how="left", on=key_liq_incompleto, indicator=True
-            )
-            liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
-                list(liquidacion_sin_CSG.columns) + ["_merge"]
-            ]
-            liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
-                liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
-            ]
-
-        # Obtenemos las liquidaciones no pareadas
-        liquidaciones_sin_CSG_no_pareadas["CSG"] = np.nan
-        liquidaciones_no_pareadas = pd.DataFrame()
-        if (
-            len(liquidaciones_sin_CSG_no_pareadas)
-            + len(liquidaciones_con_CSG_no_pareadas)
-            > 0
-        ):
-            if len(liquidaciones_con_CSG_no_pareadas) > 0:
-                if len(liquidaciones_sin_CSG_no_pareadas) > 0:
-                    liquidaciones_no_pareadas = pd.concat(
-                        [
-                            liquidaciones_con_CSG_no_pareadas,
-                            liquidaciones_sin_CSG_no_pareadas,
-                        ]
-                    )
-                else:
-                    liquidaciones_no_pareadas = liquidaciones_con_CSG_no_pareadas
-            else:
-                liquidaciones_no_pareadas = liquidaciones_sin_CSG_no_pareadas
-
-        # Obtenemos los no vendidos
-        no_vendidos_sin_CSG["CSG"] = np.nan
-        if len(no_vendidos_sin_CSG) + len(no_vendidos_con_CSG) > 0:
-            if len(no_vendidos_con_CSG) > 0:
-                if len(no_vendidos_sin_CSG) > 0:
-                    no_vendidos = pd.concat([no_vendidos_con_CSG, no_vendidos_sin_CSG])
-                else:
-                    no_vendidos = no_vendidos_con_CSG
-            else:
-                no_vendidos = no_vendidos_sin_CSG
 
         # Juntamos las columnas duplicadas
         sin_list = [
@@ -361,43 +324,10 @@ def control(
                 axis=1,
             )
 
-    df_output = [control_df, liquidaciones_no_pareadas, no_vendidos]
-    for idx, df in enumerate(df_output):
-        df_output[idx].replace(
-            {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
-        )
-
-    # Cambiamos el formato de las fechas
-    def convert_to_date(value):
-        try:
-            return pd.to_datetime(value).strftime("%Y-%m-%d")
-        except ValueError:
-            return value
-
-    date_columns = [
-        "FECHA FACTURA",
-        "FECHA DESPACHO PLANTA",
-        "FECHA EMBALAJE",
-        "ETD",
-        "ETA",
-        "ETD REAL",
-        "ETA REAL",
-        "FECHA VENTA",
-    ]
-    for column in date_columns:
-        df_output[0][column] = df_output[0][column].apply(convert_to_date)
-
-    control_order = [
-        col for col in control_df.columns if col not in ["COSTO SECO/KG"]
-    ] + ["COSTO SECO/KG"]
-    control_df = control_df[control_order]
-
     return (
         control_df,
         errores,
         revisar,
-        liquidaciones_no_pareadas,
-        no_vendidos,
     )
 
 

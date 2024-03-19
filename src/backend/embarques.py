@@ -38,9 +38,6 @@ key_columns = var.key_columns
 key_precios_contrato = var.key_precios_contrato
 cherry_color = var.cherry_color
 COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
-key_liq = var.key_liq
-key_liq_incompleto = var.key_liq_incompleto
-formatos_con_CSG = var.formatos_con_CSG
 directory = var.directory
 
 # Cargamos el codigo de puerto destino actualizado
@@ -54,12 +51,12 @@ COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion
 if __name__ == "__main__":
     # Paths to your input files
     embarques_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Base embarques.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\base_embarques.xlsx"
     )
     facturas_path_ = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Facturas proformas.xlsx"
+        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\facturas_proformas.xlsx"
     )
-    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Tarifas.xlsx"
+    tarifa_path_ = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\tarifa_aerea.xlsx"
 
     # Pickle files for each DataFrame
     embarques_pickle = (
@@ -88,8 +85,6 @@ def import_and_check(
     1) facturas: pd.DataFrame
     2) tarifa: pd.DataFrame
     3) precios_contrato: pd.DataFrame
-    4) flete_real: pd.DataFrame
-    5) costo_seco: pd.DataFrame
 
     Args:
         embarques_path (str): Path to the embarques Excel file.
@@ -103,8 +98,6 @@ def import_and_check(
     """
 
     precios_contrato_path = os.path.join(variables_folder, "precios_contrato.xlsx")
-    flete_real_path = os.path.join(variables_folder, "flete_real.xlsx")
-    costo_seco_path = os.path.join(variables_folder, "costo_seco.xlsx")
     try:
         if (
             __name__ == "__main__"
@@ -135,6 +128,11 @@ def import_and_check(
                 )
                 tarifa.to_pickle(tarifa_pickle)
 
+            source_precios_contrato = (
+                r"C:\Users\spinc\Desktop\OCHO_FUEGOS\src\config\precios_contrato.pkl"
+            )
+            precios_contrato = pd.read_pickle(source_precios_contrato)
+
         else:
             embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
             if update_loading_bar:  # 2ra operacion
@@ -145,15 +143,12 @@ def import_and_check(
             tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
             if update_loading_bar:  # 4ra operacion
                 update_loading_bar(1 / total_operations * 100)
-        precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
-        flete_real = pd.read_excel(flete_real_path, dtype=str)
-        costo_seco = pd.read_excel(costo_seco_path, dtype=str)
-        if update_loading_bar:  # 5ta operacion
-            update_loading_bar(1 / total_operations * 100)
-
+            precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
+            if update_loading_bar:  # 5ta operacion
+                update_loading_bar(1 / total_operations * 100)
     except Exception as e:
         raise ValueError(
-            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato, flete_real, costo_seco. El error encontrado es: {e}"
+            f"No se pudo imporat alguno dos los siguientes: base embarques, facturas, tarifas, precios_contrato. El error encontrado es: {e}"
         )
 
     # Revisamos las columnas de embarques
@@ -186,125 +181,7 @@ def import_and_check(
         precios_contrato_difference == set()
     ), f"La(s) columna(s) {precios_contrato_difference} no se encuentra(n) en el archivo de precios_contrato."
 
-    # Revisamos las columnas de flete_real
-    flete_real_difference = {
-        "AWB - BL",
-        "BRUTOS DOCS",
-        "FLETE AWB",
-        "GASTOS LOCALES PESOS",
-        "GASTOS LOCALES DOLARES",
-    } - set(flete_real.columns)
-    assert (
-        flete_real_difference == set()
-    ), f"La(s) columna(s) {flete_real_difference} no se encuentra(n) en el archivo de flete_real."
-
-    # Revisamos las columnas de costo_seco
-    costo_seco_difference = {
-        "TIPO DE EMBARQUE",
-        "KG NET/CAJA",
-        "COSTO SECO/KG",
-    } - set(costo_seco.columns)
-    assert (
-        costo_seco_difference == set()
-    ), f"La(s) columna(s) {costo_seco_difference} no se encuentra(n) en el archivo de costo_seco."
-
-    return embarques, facturas, tarifa, precios_contrato, flete_real, costo_seco
-
-
-def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
-    """
-    Recibe un (DataFrame del tipo entregado por la función) pseudoControl y devuelve el DataFrame con los siguientes cambios:
-    - Deja un único elemento por cada key_liq (elimina los duplicados).
-    - El representante de cada key_liq, en cada feature donde haya habido una diferencia entre los duplicados, se convierte a una tupla con el valor de la columna de cada representante.
-    - La cantidad de cajas, "CAJAS", siempre es una tupla con la cantidad de cajas de cada representante.
-    - Se agrega una columna a la derecha de "CAJAS", "CAJAS TOTALES", con la suma de las cajas de cada representante.
-
-    Args:
-        df (pd.DataFrame): DataFrame del tipo entregado por la función pseudoControl.
-
-    Returns:
-        pd.DataFrame: DataFrame con los cambios especificados.
-
-    Raises:
-        AssertionError: Si el input no es un DataFrame.
-    """
-    assert isinstance(
-        pseudocontrol, pd.DataFrame
-    ), f"El input '{pseudocontrol}' no es un DataFrame. En la función 'simplifier'. No se pudieron unir los pallets repetidos."
-
-    def unioner(df):
-        """
-        Recibe un DataFrame y lo reduce a un solo representante (fila). Si hay diferencias entre los representantes, estas se convierten a tuplas.
-        Si existe una columna con el nombre "CAJAS", la columna siempre se convierte en una tupla con la canidad de cajas de cada representante.
-        """
-        simp_df_data = {}
-        # Reducimos todas las filas a una sola fila, con cada elemento, de haber diferencias o ser CAJAS, convertido a una tupla.
-        for column in df.columns:
-            value = tuple(df[column].tolist())
-            value = tuple(
-                None if isinstance(x, (int, float)) and np.isnan(x) else x
-                for x in value
-            )
-            if (
-                (column != "CAJAS" and all(elem == value[0] for elem in value))
-                or len(value) == 1
-                or all(x is np.nan for x in value)
-            ):
-                value = value[0]
-            simp_df_data[column] = [value]
-        simp_df = pd.DataFrame(simp_df_data)
-
-        return simp_df
-
-    # Reducimos el DataFrame a un solo representante por key_liq y key_liq_incompleto, según corresponda
-    # Harvest Time (Alex) es el único que usa el key_liq
-    pseudocontrol_HT = pseudocontrol[pseudocontrol["CLIENTE"].isin(formatos_con_CSG)]
-    pseudocontrol_not_HT = pseudocontrol[
-        ~pseudocontrol["CLIENTE"].isin(formatos_con_CSG)
-    ]
-
-    pseudocontrol_HT = (
-        pseudocontrol_HT.groupby(key_liq).apply(unioner).reset_index(drop=True)
-    )
-    pseudocontrol_not_HT = (
-        pseudocontrol_not_HT.groupby(key_liq_incompleto)
-        .apply(unioner)
-        .reset_index(drop=True)
-    )
-
-    pseudocontrol = pd.concat([pseudocontrol_HT, pseudocontrol_not_HT])
-
-    # SUMAMOS TUPLAS DECEADAS: CAJAS SUMADAS, FACT PROFORMA $ TOTAL SUMADAS, PRECIO CONTRATO SUMADAS
-    def sumador_de_tuplas(cell):
-        if isinstance(cell, tuple):
-            cell = tuple(0 if pd.isna(x) else x for x in cell)
-            return sum(cell)
-        else:
-            return cell
-
-    columnas_por_sumar = [
-        "CAJAS",
-        "FACT PROFORMA $ TOTAL",
-        "PRECIO CONTRATO",
-        "BRUTOS_2",
-        "BRUTOS_2/CJ",
-        "FLETE TOTAL",
-        "FLETE TOTAL/CJ",
-        "GASTOS LOCALES CLP",
-        "GASTOS LOCALES CLP/CJ",
-        "GASTOS LOCALES USD",
-        "GASTOS LOCALES USD/CJ",
-        "FLETE TOTAL 2",
-        "FLETE TOTAL 2/CJ",
-    ]
-    for columna in columnas_por_sumar:
-        columna_sumada = columna + " SUMADAS"
-        pseudocontrol[columna_sumada] = pseudocontrol[columna].apply(sumador_de_tuplas)
-        column_sumadas_column = pseudocontrol.pop(columna_sumada)
-        column_index = pseudocontrol.columns.get_loc(columna)
-        pseudocontrol.insert(column_index + 1, columna_sumada, column_sumadas_column)
-
-    return pseudocontrol
+    return embarques, facturas, tarifa, precios_contrato
 
 
 def pseudoControl(
@@ -323,7 +200,7 @@ def pseudoControl(
         tarifa_path (str): Path del archivo de tarifa.
 
     Returns:
-        pd.DataFrame: DataFrame con la información de los embarques, facturas y tarifa en un formato simplificado: un solo representante por key_liq.
+        pd.DataFrame: Dataframe de control de embarques.
     """
 
     for file_path in [embarques_path, facturas_path, tarifa_path]:
@@ -339,7 +216,7 @@ def pseudoControl(
 
     def simplify_decimal(x: float) -> str:
         """
-        Formato para la columna KG NET/CAJA
+        Simplify a decimal number to a string.
         """
         if isinstance(x, str):
             # Extract the expression from the string
@@ -361,14 +238,8 @@ def pseudoControl(
             return np.nan if np.isnan(x) else str(x)
 
     # importamos y revisamos los archivos
-    embarques, facturas, tarifa, precios_contrato, flete_real, costo_seco = (
-        import_and_check(
-            embarques_path,
-            facturas_path,
-            tarifa_path,
-            update_loading_bar,
-            total_operations,
-        )
+    embarques, facturas, tarifa, precios_contrato = import_and_check(
+        embarques_path, facturas_path, tarifa_path, update_loading_bar, total_operations
     )
 
     # Traducimos
@@ -383,19 +254,6 @@ def pseudoControl(
     embarques = embarques[list(embarquesDict.values())]
     facturas = facturas[list(facturasDict.values())]
     tarifa = tarifa[list(tarifaDict.values())]
-    precios_contrato = precios_contrato[
-        ["CALIBRES", "KG NET/CAJA", "ETD WEEK", "CLIENTE", "PRECIO CONTRATO $/CAJA"]
-    ]
-    flete_real = flete_real[
-        [
-            "AWB - BL",
-            "BRUTOS DOCS",
-            "FLETE AWB",
-            "GASTOS LOCALES PESOS",
-            "GASTOS LOCALES DOLARES",
-        ]
-    ]
-    costo_seco = costo_seco[["TIPO DE EMBARQUE", "KG NET/CAJA", "COSTO SECO/KG"]]
 
     # Agregamos los Freight Costs a embarques
     embarques = pd.merge(embarques, tarifa, on="INSTRUCTIVO", how="left")
@@ -416,49 +274,6 @@ def pseudoControl(
     )
 
     control = pd.merge(control, precios_contrato, on=key_precios_contrato, how="left")
-
-    # Agregamos los datos de flete real
-    columnas_por_crear_flete_real = [
-        "BRUTOS_2",
-        "FLETE TOTAL",
-        "GASTOS LOCALES CLP",
-        "GASTOS LOCALES USD",
-    ]
-    source_columns_flete_real = [
-        "BRUTOS DOCS",
-        "FLETE AWB",
-        "GASTOS LOCALES PESOS",
-        "GASTOS LOCALES DOLARES",
-    ]
-
-    # Transformamos las columna necesarias a number
-    for column in source_columns_flete_real:
-        flete_real[column] = pd.to_numeric(flete_real[column], errors="coerce")
-    for column in {"NETOS", "CAJAS"}:
-        control[column] = pd.to_numeric(control[column], errors="coerce")
-
-    # Las columnas agregadas a continuación, serán borradas eventualmetne
-    control["KG_netos_BL"] = control.groupby("AWB - BL")["NETOS"].transform("sum")
-    control = control.merge(flete_real, on="AWB - BL", how="left")
-
-    # Calculamos las columnas necesarias
-    for column, column_source in zip(
-        columnas_por_crear_flete_real, source_columns_flete_real
-    ):
-        control[column] = (control[column_source] / control["KG_netos_BL"]) * control[
-            "NETOS"
-        ]
-        control[column + "/CJ"] = control[column] / control["CAJAS"]
-
-    control["FLETE TOTAL 2"] = control["FLETE TOTAL"] + control["GASTOS LOCALES USD"]
-    control["FLETE TOTAL 2/CJ"] = control["FLETE TOTAL 2"] / control["CAJAS"]
-
-    # Eliminamos las columnas innecesarias
-    control.drop(columns=["KG_netos_BL", *source_columns_flete_real], inplace=True)
-
-    # Agregamos los datos de costo seco
-    costo_seco["KG NET/CAJA"] = costo_seco["KG NET/CAJA"].apply(simplify_decimal)  
-    control = pd.merge(control, costo_seco, on=["TIPO DE EMBARQUE", "KG NET/CAJA"], how="left")
 
     # Calculamos el PRECIO CONTRATO
     control["PRECIO CONTRATO $/CAJA"] = pd.to_numeric(
@@ -556,7 +371,6 @@ def pseudoControl(
         "KG NET/CAJA",
         "BRUTOS/CAJA",
         "CAJAS",
-        "CAJAS SUMADAS",
         "PALLETS",
         "NETOS",
         "BRUTOS",
@@ -587,42 +401,12 @@ def pseudoControl(
         "FECHA VENC IVV",  # Empty
         "FACT PROFORMA $/CAJA",
         "FACT PROFORMA $ TOTAL",
-        "FACT PROFORMA $ TOTAL SUMADAS",
         "FACT EXPORTACION $/CAJA",
         "FACT EXPORTACION $ TOTAL",
+        "FLETE/kg",
         "PRECIO CONTRATO $/CAJA",
         "PRECIO CONTRATO",
-        "PRECIO CONTRATO SUMADAS",
-        "FLETE/kg",
-        "BRUTOS_2",
-        "BRUTOS_2 SUMADAS",
-        "BRUTOS_2/CJ",
-        "BRUTOS_2/CJ SUMADAS",
-        "FLETE TOTAL",
-        "FLETE TOTAL SUMADAS",
-        "FLETE TOTAL/CJ",
-        "FLETE TOTAL/CJ SUMADAS",
-        "GASTOS LOCALES CLP",
-        "GASTOS LOCALES CLP SUMADAS",
-        "GASTOS LOCALES CLP/CJ",
-        "GASTOS LOCALES CLP/CJ SUMADAS",
-        "GASTOS LOCALES USD",
-        "GASTOS LOCALES USD SUMADAS",
-        "GASTOS LOCALES USD/CJ",
-        "GASTOS LOCALES USD/CJ SUMADAS",
-        "FLETE TOTAL 2",
-        "FLETE TOTAL 2 SUMADAS",
-        "FLETE TOTAL 2/CJ",
-        "FLETE TOTAL 2/CJ SUMADAS",
-        "COSTO SECO/KG",
     ]
-
-    # Solo mayusculas en los valores de las columnas key para liquidaciones (y en formato str)
-    for key in key_liq:
-        control[key] = control[key].astype(str).str.upper()
-
-    # Simplificamos el DataFrame
-    control = simplifier(control)
 
     control = control[column_order]
 

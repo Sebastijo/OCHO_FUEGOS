@@ -1,8 +1,8 @@
 """
 El objetivo de este arhivo es mantener todas las variables globales del programa.
 """
-import os
 import sys
+import os
 
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"
@@ -144,6 +144,25 @@ cherry_color = {
     "J-UP": "LIGHT",
 }
 
+"""
+# COD PUERTO DESTINO ### Para configuracion
+COD_PUERTO_DESTINO = {
+    "SHANGHAI AIRPORT": "411",
+    "GUANGZHOU AIRPORT": "411",
+    "CHANGSHA - HUANGHUA": "411",
+    "HONG KONG": "301",
+    "SHANGHAI": "301",
+    "SHENZHEN": "411",
+    "XIAMEN": "411",
+    "ZHENGZHOU AIRPORT": "411",
+    "BANGKOK": "319",
+    "MADRID": "517",
+    "MANILA": "335",
+    "SAO PAULO": "291",
+    "SAO PAULO AIRPORT": "220",
+    "SINGAPUR": "332",
+}
+"""
 
 # COD PUERTO EMBARQUE
 COD_PUERTO_EMBARQUE = {
@@ -152,6 +171,9 @@ COD_PUERTO_EMBARQUE = {
     "Los Libertadores": "965",
     "Valparaiso": "208",
 }
+
+# Precio contrato caja =====================================
+
 
 # LIQUIDACIONES
 # Diccionario para el main table de liquidacion_reader.py y liquidacion_interpreter.py
@@ -201,46 +223,12 @@ main_dict_liq_JF = {  # JF -> Standard
     "Total（RMB）": "金额",
 }
 
-# Columnas necesarias para el formato HFF de liquidacion
-main_list_liq_HFF = [
-    "观察",
-    "到货数量",
-    "品种",
-    "版号",
-    "重量",
-    "尺寸",
-    "日期",
-    "销售数量",
-    "单价",
-    "金额",
-    "美金",
-]
-
-main_list_liq_HFF_SEA = {
-    "观察": "观察",
-    "到货数量": "到货数量",
-    "品种": "品种",
-    "版号": "版号",
-    "重量": "重量",
-    "规格": "尺寸",
-    "销售日期": "日期",
-    "销售数量": "销售数量",
-    "单价": "单价",
-    "金额": "金额",
-    "美金": "美金",
-    # "每箱收益 FOB FOB Return",
-}
 
 # key para el main table de liquidacion_reader.py. Se usa en los que tienen columna CSG en control_final para el merge
 key_liq = ["FOLIO", "CSG", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 
 # key para el main table de liquidacion_reader.py. Se usa en los que no tienen columna CSG
 key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
-
-# Los siguientes son los formatos de liquidaciones que usan CSG. Cualquier otro formato no lo usa.
-# El nombre del formato tiene que ser aquel que se encuentra en la columan ReceiverName de base embarques.
-# Es utilizado en embarques.py
-formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
 
 # Ubicación del programa en el dispositivo del usuario
 directory = os.path.dirname(os.path.realpath(sys.argv[0]))
