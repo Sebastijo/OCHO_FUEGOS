@@ -49,7 +49,9 @@ else:
     directory = var.directory  # Directorio de trabajo
 
     datos_folder = os.path.join(directory, "Datos del programa")
-    control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
+    control_path = os.path.join(
+        datos_folder, "output", "Control.xlsx"
+    )  # Path del control
 
 
 def panqueca():
@@ -106,7 +108,7 @@ def panqueca():
 
         # Ejecutamos el programa de ventas
         try:
-            control_df, errores, revisar, liquidaciones_no_pareadas, no_vendidos = (
+            control_df, errores, revisar, liquidaciones_no_pareadas = (
                 control(
                     inputPaths["embarques"],
                     inputPaths["facturas"],
@@ -123,7 +125,7 @@ def panqueca():
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
 
         # Exportamos los resultados a la carpeta de outputs
-        export(control_df, liquidaciones_no_pareadas, no_vendidos)
+        export(control_df, liquidaciones_no_pareadas)
 
         # Cambiamos el texto de los outputs
         output[0].configure(

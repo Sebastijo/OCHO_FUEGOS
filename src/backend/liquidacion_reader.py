@@ -48,19 +48,20 @@ if __name__ == "__main__":
 # a list of lists of DataFrames with only three (3) DataFrames corresponding to the main, cost, and note tables.
 def embarques_three_tables(
     embarques: list[list], paginas: list[int]
-) -> tuple[list, list, list]:
+) -> tuple[list[dict], list[int], list[int]]:
     """
-    Takes a list of lists of DataFrames and returns, on the first coordinate, a list of dictonaries with the words "main", "cost", "note", "main_summary"
-    where the definition corresponds to the DataFrame associated to that category. This list excludes all errors found.
-    On the second category, a list with the pages where errors where found is returned.
+    Takes a list of lists of DataFrames and a list of integers representing page location of the embarques in the PDF or Excel file. Returns a tuple with three coordinates:
 
+    0) A list of dictionaries, each containing the dataframes: main, cost, note, main_summary.
+    1) A list of integers giving the page number of liquidaciones which were not read correctly.
+    2) A list of integers giving the page number of liquidaciones which were read correctly.
 
     Args:
         embarques (list): List of lists of DataFrames
         paginas (list): List of integers
 
     Returns:
-        tuple: tuple with tres coordinates (list, list, list)
+        tuple: tuple with three coordinates (list[dict], list[int], list[int])
 
     Raises:
         AssertionError: If embarques is not a list
@@ -375,7 +376,7 @@ def feature_engine(embarque: embarqueL) -> None:
     5) COMISION/KG
     6) COSTO Y COMISION
     7) LIQ FINAL
-    8) key
+    8) UBICACIÓN
 
     Args:
         embarque (embarqueL): embarque in the form of an embarqueL
@@ -461,6 +462,16 @@ def feature_engine(embarque: embarqueL) -> None:
     embarque.main["LIQ FINAL"] = embarque.main["TOTAL USD"] - (
         embarque.main["COSTO"] + embarque.main["COMISION"]
     )
+
+    # Agregamows la columna con la ubicación
+    ubicacion = str((embarque.location[0], "pag. " + str(embarque.location[1])))
+    embarque.main["UBICACIÓN"] = ubicacion
+
+    # Ordenamos las columnas
+    columns = embarque.main.columns.tolist()
+    ubicacion_column = columns.pop()
+    columns.insert(1, ubicacion_column)
+    embarque.main = embarque.main[columns]
 
 
 # ARREGLAR COMENTARIO INTRODUCTORIO

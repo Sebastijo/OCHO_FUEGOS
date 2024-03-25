@@ -28,13 +28,10 @@ if __name__ == "__main__":
     liq_no_pareadas_pickle = (
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\liq_no_pareadas.pkl"
     )
-    no_vendidos_pickle = (
-        r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\no_vendidos.pkl"
-    )
+
     if not (
         os.path.exists(control_pickle)
         and os.path.exists(liq_no_pareadas_pickle)
-        and os.path.exists(no_vendidos_pickle)
     ):
         from src.backend.control_final import control
 
@@ -55,36 +52,31 @@ if __name__ == "__main__":
             if os.path.exists(liq_no_pareadas_pickle)
             else None
         )
-        os.remove(no_vendidos_pickle) if os.path.exists(no_vendidos_pickle) else None
-        control_df, errores, revisar, liquidaciones_no_pareadas, no_vendidos = control(
+
+        control_df, errores, revisar, liquidaciones_no_pareadas = control(
             embarque_path, facturas_path, tarifas_path, liquidaciones_path
         )
 
         control_df.to_pickle(control_pickle)
         liquidaciones_no_pareadas.to_pickle(liq_no_pareadas_pickle)
-        no_vendidos.to_pickle(no_vendidos_pickle)
 
     control_df = pd.read_pickle(control_pickle)
     liquidaciones_no_pareadas = pd.read_pickle(liq_no_pareadas_pickle)
-    no_vendidos = pd.read_pickle(no_vendidos_pickle)
 
 
-def export(
-    control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame, no_vendidos: pd.DataFrame
-):
+def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame):
     """
     Esta función toma los resultados del programa y los exporta a un archivo Excel.
 
     Args:
         control_df (pd.DataFrame): DataFrame con los resultados del programa.
         liq_no_pareadas (pd.DataFrame): DataFrame con las liquidaciones no pareadas.
-        no_vendidos (pd.DataFrame): DataFrame con los productos no vendidos.
 
     Returns:
         None
 
     Raises:
-        AssertionError: Si control_df, liq_no_pareadas o no_vendidos no son DataFrames de pandas.
+        AssertionError: Si control_df o liq_no_pareadas no son DataFrames de pandas.
     """
 
     assert isinstance(
@@ -93,9 +85,6 @@ def export(
     assert isinstance(
         liq_no_pareadas, pd.DataFrame
     ), "liq_no_pareadas debe ser un DataFrame de pandas."
-    assert isinstance(
-        no_vendidos, pd.DataFrame
-    ), "no_vendidos debe ser un DataFrame de pandas."
 
     # Function to apply formatting to a sheet
     def apply_formatting(worksheet, df):
@@ -135,16 +124,7 @@ def export(
         # Apply formatting to Liquidaciones no pareadas
         apply_formatting(worksheet2, liq_no_pareadas)
 
-        # Add No vendidos with no_vendidos
-        no_vendidos.to_excel(
-            writer, sheet_name="No vendidos", startrow=1, header=False, index=False
-        )
-        worksheet3 = writer.sheets["No vendidos"]
-
-        # Apply formatting to No vendidos
-        apply_formatting(worksheet3, no_vendidos)
-
 
 if __name__ == "__main__":
-    export(control_df, liquidaciones_no_pareadas, no_vendidos)
+    export(control_df, liquidaciones_no_pareadas)
     print(f"El archivo {control_path} ha sido creado con éxito.")

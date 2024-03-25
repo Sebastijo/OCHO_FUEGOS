@@ -71,7 +71,6 @@ def control(
     1) Un diccionario con los errores de liquidación
     2) Un diccionario con los elementos que necesitan ser revisados
     3) Liquidaciones no pareadas
-    4) No vendidos
 
     Args:
         embarques_path (str): path del archivo de embarques
@@ -183,18 +182,17 @@ def control(
     liq_con_CSG = []
     liq_sin_CSG = []
     liquidaciones_no_pareadas = pd.DataFrame()
-    no_vendidos = pd.DataFrame()
-    null_checker = lambda x: x in {0, "0"} or (isinstance(x, float) and np.isnan(x))
     for embarques in liquidacion:
         if embarques.CSG:
             liq_con_CSG.append(embarques.main)
         else:
             liq_sin_CSG.append(embarques.main)
 
-    # Si no hay liquidaciones con CSG o sin CSG, entonces el control final es el pseudo control con las columnas de liquidación vacías.
+    # Si no hay liquidaciones, entonces el control final es el pseudo control con las columnas de liquidación vacías.
     if len(liq_sin_CSG) + len(liq_con_CSG) == 0:
         control_df = pseudo_control
         for column in [
+            "UBICACIÓN",
             "FECHA VENTA",
             "FOLIO",
             "CSG",
@@ -228,13 +226,6 @@ def control(
         # Concatenamos las liquidaciones con y sin CSG
         if len(liq_con_CSG) > 0:  # Si hay liquidaciones con CSG
             liquidacion_con_CSG = pd.concat(liq_con_CSG)
-            # Removemos los no vendidos
-            no_vendidos_con_CSG = liquidacion_con_CSG[
-                liquidacion_con_CSG["RMB/CJ"].apply(null_checker)
-            ]
-            liquidacion_con_CSG = liquidacion_con_CSG[
-                ~liquidacion_con_CSG["RMB/CJ"].apply(null_checker)
-            ]
             control_df = pseudo_control.merge(
                 liquidacion_con_CSG,
                 how="left",
@@ -254,13 +245,6 @@ def control(
 
             if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
-                # Removemos los no vendidos
-                no_vendidos_sin_CSG = liquidacion_sin_CSG[
-                    liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-                ]
-                liquidacion_sin_CSG = liquidacion_sin_CSG[
-                    ~liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-                ]
                 control_df = control_df.merge(
                     liquidacion_sin_CSG,
                     how="left",
@@ -281,13 +265,6 @@ def control(
 
         else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
-            # Removemos los no vendidos
-            no_vendidos_sin_CSG = liquidacion_sin_CSG[
-                liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-            ]
-            liquidacion_sin_CSG = liquidacion_sin_CSG[
-                ~liquidacion_sin_CSG["RMB/CJ"].apply(null_checker)
-            ]
             control_df = pseudo_control.merge(
                 liquidacion_sin_CSG,
                 how="left",
@@ -326,17 +303,6 @@ def control(
             else:
                 liquidaciones_no_pareadas = liquidaciones_sin_CSG_no_pareadas
 
-        # Obtenemos los no vendidos
-        no_vendidos_sin_CSG["CSG"] = np.nan
-        if len(no_vendidos_sin_CSG) + len(no_vendidos_con_CSG) > 0:
-            if len(no_vendidos_con_CSG) > 0:
-                if len(no_vendidos_sin_CSG) > 0:
-                    no_vendidos = pd.concat([no_vendidos_con_CSG, no_vendidos_sin_CSG])
-                else:
-                    no_vendidos = no_vendidos_con_CSG
-            else:
-                no_vendidos = no_vendidos_sin_CSG
-
         # Juntamos las columnas duplicadas
         sin_list = [
             columnSin for columnSin in control_df.columns if columnSin.endswith("_sin")
@@ -361,7 +327,7 @@ def control(
                 axis=1,
             )
 
-    df_output = [control_df, liquidaciones_no_pareadas, no_vendidos]
+    df_output = [control_df, liquidaciones_no_pareadas]
     for idx, df in enumerate(df_output):
         df_output[idx].replace(
             {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
@@ -392,12 +358,13 @@ def control(
     ] + ["COSTO SECO/KG"]
     control_df = control_df[control_order]
 
+    liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
+
     return (
         control_df,
         errores,
         revisar,
         liquidaciones_no_pareadas,
-        no_vendidos,
     )
 
 

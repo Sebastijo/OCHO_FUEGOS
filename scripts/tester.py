@@ -1,7 +1,7 @@
 destination = (
-    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\Datos del programa\NO TOCAR\costo_seco.pkl"
+    r"C:\Users\spinc\Desktop\OCHO_FUEGOS\Datos del programa\NO TOCAR\flete_real.pkl"
 )
-source = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\costo_seco.xlsx"
+source = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\Datos del programa\NO TOCAR\flete_real.xlsx"
 
 import pandas as pd
 

@@ -245,8 +245,24 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
                 None if isinstance(x, (int, float)) and np.isnan(x) else x
                 for x in value
             )
+            columnas_cuantitativas = {
+                "CAJAS",
+                "PALLETS",
+                "NETOS",
+                "BRUTOS",
+                "FACT PROFORMA $ TOTAL",
+                "PRECIO CONTRATO",
+                "BRUTOS_2",
+                "FLETE_TOTAL",
+                "GASTOS LOCALES CLP",
+                "GASTOS LOCALES USD",
+                "FLETE TOTAL 2",
+            }
             if (
-                (column != "CAJAS" and all(elem == value[0] for elem in value))
+                (
+                    (not column in columnas_cuantitativas)
+                    and all(elem == value[0] for elem in value)
+                )
                 or len(value) == 1
                 or all(x is np.nan for x in value)
             ):
@@ -287,15 +303,10 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
         "FACT PROFORMA $ TOTAL",
         "PRECIO CONTRATO",
         "BRUTOS_2",
-        "BRUTOS_2/CJ",
         "FLETE TOTAL",
-        "FLETE TOTAL/CJ",
         "GASTOS LOCALES CLP",
-        "GASTOS LOCALES CLP/CJ",
         "GASTOS LOCALES USD",
-        "GASTOS LOCALES USD/CJ",
         "FLETE TOTAL 2",
-        "FLETE TOTAL 2/CJ",
     ]
     for columna in columnas_por_sumar:
         columna_sumada = columna + " SUMADAS"
@@ -457,8 +468,10 @@ def pseudoControl(
     control.drop(columns=["KG_netos_BL", *source_columns_flete_real], inplace=True)
 
     # Agregamos los datos de costo seco
-    costo_seco["KG NET/CAJA"] = costo_seco["KG NET/CAJA"].apply(simplify_decimal)  
-    control = pd.merge(control, costo_seco, on=["TIPO DE EMBARQUE", "KG NET/CAJA"], how="left")
+    costo_seco["KG NET/CAJA"] = costo_seco["KG NET/CAJA"].apply(simplify_decimal)
+    control = pd.merge(
+        control, costo_seco, on=["TIPO DE EMBARQUE", "KG NET/CAJA"], how="left"
+    )
 
     # Calculamos el PRECIO CONTRATO
     control["PRECIO CONTRATO $/CAJA"] = pd.to_numeric(
@@ -597,23 +610,18 @@ def pseudoControl(
         "BRUTOS_2",
         "BRUTOS_2 SUMADAS",
         "BRUTOS_2/CJ",
-        "BRUTOS_2/CJ SUMADAS",
         "FLETE TOTAL",
         "FLETE TOTAL SUMADAS",
         "FLETE TOTAL/CJ",
-        "FLETE TOTAL/CJ SUMADAS",
         "GASTOS LOCALES CLP",
         "GASTOS LOCALES CLP SUMADAS",
         "GASTOS LOCALES CLP/CJ",
-        "GASTOS LOCALES CLP/CJ SUMADAS",
         "GASTOS LOCALES USD",
         "GASTOS LOCALES USD SUMADAS",
         "GASTOS LOCALES USD/CJ",
-        "GASTOS LOCALES USD/CJ SUMADAS",
         "FLETE TOTAL 2",
         "FLETE TOTAL 2 SUMADAS",
         "FLETE TOTAL 2/CJ",
-        "FLETE TOTAL 2/CJ SUMADAS",
         "COSTO SECO/KG",
     ]
 
