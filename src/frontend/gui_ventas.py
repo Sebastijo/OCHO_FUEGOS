@@ -97,6 +97,18 @@ def panqueca():
         Función que se ejecuta al presionar el botón de ejecución.
         """
         ejecutar.disable()
+        try:
+            if os.path.exists(control_path):
+                with open(control_path, "w"):
+                    pass
+
+        except Exception as e:
+            error_message = f"""El archivo de Excel en la ubicación {control_path} está abierto,
+                           con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
+                           El error interno es: {e}"""
+            inputErrorWindow(root, error_message)
+            ejecutar.enable()
+            return
         # Guardamos los paths de los archivos seleccionados
         inputPaths = (
             {}
@@ -107,24 +119,29 @@ def panqueca():
             )
 
         # Ejecutamos el programa de ventas
-        control_df, errores, revisar, liquidaciones_no_pareadas = (
-            control(
+        try:
+            control_df, errores, revisar, liquidaciones_no_pareadas = control(
                 inputPaths["embarques"],
                 inputPaths["facturas"],
                 inputPaths["tarifas"],
                 inputPaths["liquidaciones"],
             )
-        )
-        """except Exception as e:
+        except Exception as e:
             inputErrorWindow(root, e)
             ejecutar.enable()
-            return"""
+            return
+
+        # Exportamos los resultados a la carpeta de outputs
+        try:
+            export(control_df, liquidaciones_no_pareadas)
+
+        except Exception as e:
+            inputErrorWindow(root, e)
+            ejecutar.enable()
+            return
 
         # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
-
-        # Exportamos los resultados a la carpeta de outputs
-        export(control_df, liquidaciones_no_pareadas)
 
         # Cambiamos el texto de los outputs
         output[0].configure(

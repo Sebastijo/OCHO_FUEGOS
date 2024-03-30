@@ -40,7 +40,7 @@ if __name__ == "__main__":
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HT_Sales Summary 784-38464226-8F-5.xlsx"
     liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
 
 
@@ -397,15 +397,16 @@ def feature_engine(embarque: embarqueL) -> None:
         df = df.reset_index(drop=True)
         stringed_df = ""
         for column in df.columns:
-            stringed_df += str(column) + " "
+            column_processed = str(column).rstrip("：").rstrip(":").rstrip(" ") + ":"
+            stringed_df += "| " + column_processed + " " 
             for idx, element in enumerate(df[column]):
                 if idx == len(df[column]) - 1:
                     stringed_df += str(element) + " "
                 else:
-                    stringed_df += str(element) + " "
+                    stringed_df += str(element) + "; "
 
-        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ").replace(" nan ", " ").replace
-
+        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ").replace(" nan ", " ").replace("nan;", "nan")
+        stringed_df = stringed_df.lstrip("|")
         return stringed_df
 
     # Si todos los elementos de la columan de observacion son False, los cambiamos por la nota.

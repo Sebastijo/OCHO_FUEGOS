@@ -14,8 +14,10 @@ import pandas as pd
 # importamos modulos propios
 if __name__ == "__main__":
     from src.config import variables as var
+    from src.frontend.error_window import inputErrorWindow
 else:
     from ..config import variables as var
+    from ..frontend.error_window import inputErrorWindow
 
 directory = var.directory
 datos_folder = os.path.join(directory, "Datos del programa")
@@ -29,10 +31,7 @@ if __name__ == "__main__":
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\liq_no_pareadas.pkl"
     )
 
-    if not (
-        os.path.exists(control_pickle)
-        and os.path.exists(liq_no_pareadas_pickle)
-    ):
+    if not (os.path.exists(control_pickle) and os.path.exists(liq_no_pareadas_pickle)):
         from src.backend.control_final import control
 
         embarque_path = (
@@ -99,30 +98,37 @@ def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame):
             worksheet.set_column(col_num, col_num, column_len)
 
     # Creamos el Excel de output
-    with pd.ExcelWriter(control_path, engine="xlsxwriter") as writer:
-        # Convert the original dataframe (control_df) to an XlsxWriter Excel object
-        control_df.to_excel(
-            writer, sheet_name="Control", startrow=1, header=False, index=False
-        )
 
-        workbook = writer.book
-        worksheet1 = writer.sheets["Control"]
+    try:
+        with pd.ExcelWriter(control_path, engine="xlsxwriter") as writer:
+            # Convert the original dataframe (control_df) to an XlsxWriter Excel object
+            control_df.to_excel(
+                writer, sheet_name="Control", startrow=1, header=False, index=False
+            )
 
-        # Apply formatting to Control
-        apply_formatting(worksheet1, control_df)
+            workbook = writer.book
+            worksheet1 = writer.sheets["Control"]
 
-        # Add Liquidaciones no pareadas with liq_no_pareadas
-        liq_no_pareadas.to_excel(
-            writer,
-            sheet_name="Liquidaciones no pareadas",
-            startrow=1,
-            header=False,
-            index=False,
-        )
-        worksheet2 = writer.sheets["Liquidaciones no pareadas"]
+            # Apply formatting to Control
+            apply_formatting(worksheet1, control_df)
 
-        # Apply formatting to Liquidaciones no pareadas
-        apply_formatting(worksheet2, liq_no_pareadas)
+            # Add Liquidaciones no pareadas with liq_no_pareadas
+            liq_no_pareadas.to_excel(
+                writer,
+                sheet_name="Liquidaciones no pareadas",
+                startrow=1,
+                header=False,
+                index=False,
+            )
+            worksheet2 = writer.sheets["Liquidaciones no pareadas"]
+
+            # Apply formatting to Liquidaciones no pareadas
+            apply_formatting(worksheet2, liq_no_pareadas)
+    except Exception as e:
+        raise RuntimeError(f"""El archivo de Excel en la ubicación {control_path} está abierto,
+                        con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
+                        El error interno es: {e}""")
+        
 
 
 if __name__ == "__main__":
