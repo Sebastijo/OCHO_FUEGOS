@@ -49,13 +49,18 @@ main_list_liq_HFF = var.main_list_liq_HFF
 main_list_liq_HFF_SEA = var.main_list_liq_HFF_SEA
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_SEA_8F- Liquidation- INST 113- Seaspan Raptor-MEDU9767315.xlsx"
-    # example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\070. Liquidation-品牌-8F  柜号 TTNU-8361862.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HT_Sales Summary 020-30475115-Ocho Fuegos-1-1 .xlsx"
+    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-045-91458345-X.xlsx"
 
 
 def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     """
+    Two inputs possible: PDF or Excel file
+    For PDF:
     Takes in a liquidación file in the forma of a PDF in the format of the 12Islands liquidation format (can have multimple embarques)
+    For Excel:
+    Takes in a liquidación file in the format of the 12Islands liquidation format.
+
     Returns tuple with two coordinates:
 
     0) A list of lists, the n-th list contains the tables, as DataFrames, corresponding to the n-th embarque.
@@ -75,65 +80,168 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     """
     assert os.path.exists(liquidacion), f"La ruta del archivo {liquidacion} no existe."
     assert os.path.isfile(liquidacion) and liquidacion.lower().endswith(
-        ".pdf"
-    ), f"El archivo en {liquidacion} no es un archivo PDF."
+        (".pdf", ".xlsx", ".xls")
+    ), f"El archivo {liquidacion} no es un archivo .pdf, .xlsx, o xls."
 
     embarques = []  # Lista de todos los embarques
+
     paginas_list = (
         []
     )  # Lista cuya n-ésima entrada contiene la primera página del n-ésimo embarque
-    embarqueNum = 0  # Índice del embarque en la lista de embarques
-    i = 0  # Índice de página (pagina - 1)
-    pages_left = True
-    while pages_left:  # Recorremos hasta que no queden hojas
-        embarque_change = False  # "El embarque cambió respecto al ciclo anterior"
-        while not embarque_change:  # Mientras nos mantengamos en el mismo embarque
-            """
-            Las páginas del PDF contienen distintos embarques, cada embarque puede estar contenido en varias págnas las cuales están una tras la otra.
-            Este while se encarga de identificar los diferentes embarques y poner todas las tablas de un mismo embarque en una misma msima lista metida en la lista embarques.
-            """
-            page = i + 1  # Definimos la página actual a partir del índice
+    if liquidacion.endswith(".pdf"):
+        embarqueNum = 0  # Índice del embarque en la lista de embarques
+        i = 0  # Índice de página (pagina - 1)
+        pages_left = True
+        while pages_left:  # Recorremos hasta que no queden hojas
+            embarque_change = False  # "El embarque cambió respecto al ciclo anterior"
+            while not embarque_change:  # Mientras nos mantengamos en el mismo embarque
+                """
+                Las páginas del PDF contienen distintos embarques, cada embarque puede estar contenido en varias págnas las cuales están una tras la otra.
+                Este while se encarga de identificar los diferentes embarques y poner todas las tablas de un mismo embarque en una misma msima lista metida en la lista embarques.
+                """
+                page = i + 1  # Definimos la página actual a partir del índice
 
-            try:
-                # Transformamos la página en una lista de tablas DataFrame
+                try:
+                    # Transformamos la página en una lista de tablas DataFrame
 
-                tables_in_page = tabula.read_pdf(
-                    liquidacion,
-                    pages=page,
-                    multiple_tables=True,
-                    pandas_options={"dtype": str},
-                )
-            except Exception as e:  # Si no hay hojas restantes, terminamos
+                    tables_in_page = tabula.read_pdf(
+                        liquidacion,
+                        pages=page,
+                        multiple_tables=True,
+                        pandas_options={"dtype": str},
+                    )
+
+                except Exception as e:  # Si no hay hojas restantes, terminamos
+                    assert (
+                        str(e)
+                        == "java.lang.IndexOutOfBoundsException: Page number does not exist."
+                    ), f"Error de lecutra del PDF de liquidacion {liquidacion}: {e}"
+                    pages_left = False
+                    break
+
                 assert (
-                    str(e)
-                    == "java.lang.IndexOutOfBoundsException: Page number does not exist."
-                ), f"Error de lecutra del PDF de liquidacion {liquidacion}: {e}"
-                pages_left = False
-                break
+                    embarqueNum == len(embarques) or embarqueNum == len(embarques) - 1
+                ), "El índice de embarque no es correcto"
+                if embarqueNum == len(
+                    embarques
+                ):  # Si el embarque no existe, lo creamos y guardamos su núemro de página
+                    embarques.append(tables_in_page)
+                    paginas_list.append(page)
 
-            assert (
-                embarqueNum == len(embarques) or embarqueNum == len(embarques) - 1
-            ), "El índice de embarque no es correcto"
-            if embarqueNum == len(
-                embarques
-            ):  # Si el embarque no existe, lo creamos y guardamos su núemro de página
-                embarques.append(tables_in_page)
-                paginas_list.append(page)
+                elif (
+                    embarqueNum == len(embarques) - 1
+                ):  # Si el embarque si existe, lo agregamos
+                    embarques[embarqueNum] = embarques[embarqueNum] + tables_in_page
+                cardinality = len(tables_in_page)  # Cantidad de tables en la hoja
+                assert (
+                    cardinality >= 3 or cardinality == 1
+                ), f"La cantidad de tablas en la página {page} del archivo {liquidacion} no es correcta; deberían srer una o más que tres."
+                if (
+                    cardinality >= 3
+                ):  # Si es la última página de embarque, cambiamos de embarque
+                    embarqueNum += 1
+                    embarque_change = True
+                i += 1  # Pasamos a la siguiente pagina
 
-            elif (
-                embarqueNum == len(embarques) - 1
-            ):  # Si el embarque si existe, lo agregamos
-                embarques[embarqueNum] = embarques[embarqueNum] + tables_in_page
-            cardinality = len(tables_in_page)  # Cantidad de tables en la hoja
-            assert (
-                cardinality >= 3 or cardinality == 1
-            ), f"La cantidad de tablas en la página {page} del archivo {liquidacion} no es correcta; deberían srer una o más que tres."
-            if (
-                cardinality >= 3
-            ):  # Si es la última página de embarque, cambiamos de embarque
-                embarqueNum += 1
-                embarque_change = True
-            i += 1  # Pasamos a la siguiente pagina
+    else:  # Si el archivo es un excel
+        embarque = pd.read_excel(liquidacion, dtype=str)
+        embarque = embarque.dropna(axis=1, how="all")
+
+        main_location = embarque[embarque.iloc[:, 0] == "日期"].index[0]
+        embarque = embarque.iloc[main_location:].reset_index(drop=True)
+
+        concatenated_string = embarque.iloc[0] + " " + embarque.iloc[1]
+        embarque.columns = concatenated_string
+        embarque = embarque.iloc[2:]
+        embarque.reset_index(drop=True, inplace=True)
+
+        embarque.columns = [
+            column.replace(" " + " ", " ")
+            .replace("(", " (")
+            .replace("FOB FOB", " FOB FOB")
+            for column in list(embarque.columns)
+        ]
+
+        assert (
+            "品种 Variety" in embarque.columns
+        ), f"La columna '品种 Variety' no se encuentra la liquidacion de {liquidacion}"
+        column_with_total = embarque["品种 Variety"].copy().dropna()
+        summarry_location = column_with_total[
+            column_with_total.str.contains("total", case=False)
+        ]
+        assert (
+            len(summarry_location) == 1
+        ), f"No se encontró el resumen en la liquidación {liquidacion}."
+        summarry_location = summarry_location.index[0]
+
+        cost_location = embarque[
+            embarque.iloc[:, 0] == "其他费用 Additional Fees"
+        ].index[0]
+
+        main = embarque.iloc[: summarry_location + 1].copy().reset_index(drop=True)
+        not_main = embarque.iloc[cost_location:].copy().reset_index(drop=True)
+
+        if "总数 (美金) Total" in main.columns:
+            main = main.rename(columns={"总数 (美金) Total": "总数 (美金) Total USD"})
+
+        wanted_columns = [
+            "日期 Date",
+            "板号 Pallet No.",
+            "果园 CSG",
+            "品种 Variety",
+            "大小 Size",
+            "数量 Quantity",
+            "规格 Specification",
+            "价格 (人民币) Price RMB",
+            "总数 (人民币) Total RMB",
+            "总数 (美金) Total USD",
+            "每箱收益  FOB FOB Return",
+            "总收益 FOB Total Return",
+        ]
+
+        missing_columns = (
+            set(wanted_columns)
+            - set(main.columns)
+            - {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}
+        )
+        assert (
+            missing_columns == set()
+        ), f"Las columnas de la tabla principal del archivo {liquidacion} no son las correctas. Deben ser {wanted_columns} pero faltan {missing_columns}."
+
+        if not {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}.issubset(
+            set(main.columns)
+        ):
+            main["每箱收益  FOB FOB Return"] = 0
+            main["总收益 FOB Total Return"] = 0
+
+        main = main[wanted_columns]
+
+        main.at[main.index[-1], "品种 Variety"] = np.nan
+
+        not_main = not_main.dropna(axis=1, how="all")
+
+        not_main.columns = not_main.iloc[0]
+        not_main = not_main.iloc[1:]
+
+        cost_column_dict = {
+            "其他费用 Additional Fees": "其他费用 Additional Fees",
+            "人民币 RMB": "人民币 RMB",
+            "美元 USD": "美金 USD",
+        }
+        not_main = not_main.rename(columns=cost_column_dict)
+        cost = not_main.copy()[cost_column_dict.values()].dropna(how="all")
+        note = not_main.drop(columns=cost_column_dict.values()).dropna(how="all")
+
+        cost["其他费用 Additional Fees"] = cost["其他费用 Additional Fees"].str.replace(
+            "）", ")"
+        )
+
+        embarque = [main, cost, note]
+        for idx in range(len(embarque)):
+            embarque[idx] = embarque[idx].reset_index(drop=True)
+        embarques.append(embarque)
+        paginas_list.append(1)
+
     return embarques, paginas_list
 
 
@@ -722,14 +830,14 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
     filename = filename = os.path.basename(liquidacion)
 
     assert (
-        filename.endswith(".pdf")
+        filename.startswith("HT")
         or filename.startswith("8F")
         or filename.startswith("HFF")
         or filename.startswith("BQ")
-    ), f"No se pudo detectar el formato del archivo {filename}, asegurece que termine en '.pdf' o que empiece con alguno de los siguientes: '8F', 'HFF', 'BQ'."
+    ), f"No se pudo detectar el formato del archivo {filename}, asegurece que empiece con alguno de los siguientes: 'HT', '8F', 'HFF', 'BQ'."
 
     # Verificamos el tipo de liquidación
-    if filename.endswith(".pdf"):
+    if filename.startswith("HT"):
         liquidacion_list = interpreter_12Islands(liquidacion)
     elif filename.startswith("8F"):
         liquidacion_list = interpreter_standard(liquidacion)
@@ -745,7 +853,7 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
 
 if __name__ == "__main__":
     embarque_example1, page_example1 = interpreter(example1)
-    print("Template 8F:")
+    print("Example1:")
     print("Main:")
     print(embarque_example1[0][0])
     print("Cost:")
@@ -753,12 +861,13 @@ if __name__ == "__main__":
     print("Note:")
     print(embarque_example1[0][2])
     print()
-    # embarque_example2, page_example2 = interpreter(example2)
-    # print("JumboFruit:")
-    # print("Main:")
-    # print(embarque_example2[0][0])
-    # print("Cost:")
-    # print(embarque_example2[0][1])
-    # print("Note:")
-    # print(embarque_example2[0][2])
-    # print()
+
+    embarque_example2, page_example2 = interpreter(example2)
+    print("Example2:")
+    print("Main:")
+    print(embarque_example2[0][0])
+    print("Cost:")
+    print(embarque_example2[0][1])
+    print("Note:")
+    print(embarque_example2[0][2])
+    print()

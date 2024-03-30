@@ -107,19 +107,18 @@ def panqueca():
             )
 
         # Ejecutamos el programa de ventas
-        try:
-            control_df, errores, revisar, liquidaciones_no_pareadas = (
-                control(
-                    inputPaths["embarques"],
-                    inputPaths["facturas"],
-                    inputPaths["tarifas"],
-                    inputPaths["liquidaciones"],
-                )
+        control_df, errores, revisar, liquidaciones_no_pareadas = (
+            control(
+                inputPaths["embarques"],
+                inputPaths["facturas"],
+                inputPaths["tarifas"],
+                inputPaths["liquidaciones"],
             )
-        except Exception as e:
+        )
+        """except Exception as e:
             inputErrorWindow(root, e)
             ejecutar.enable()
-            return
+            return"""
 
         # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
         frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales

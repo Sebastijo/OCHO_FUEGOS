@@ -404,7 +404,7 @@ def feature_engine(embarque: embarqueL) -> None:
                 else:
                     stringed_df += str(element) + " "
 
-        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ")
+        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ").replace(" nan ", " ").replace
 
         return stringed_df
 

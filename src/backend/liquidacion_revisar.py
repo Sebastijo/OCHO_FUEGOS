@@ -23,18 +23,19 @@ if __name__ == "__main__":
     import os
     import pickle as pk
 
-    liquidaciones_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\All 8F Sales Summary (1).pdf"
-    liquidaciones_pickle = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\All_8F_Sales_Summary_(1)_as_embaruqeL_list.pkl"
+    liquidaciones_path = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones (readable)\HT_Sales Summary 020-30475115-Ocho Fuegos-1-1 .xlsx"
+    liquidaciones_pickle = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\pickles\HT_Sales Summary 020-30475115-Ocho Fuegos-1-1 .pkl"
+
 
     if os.path.exists(liquidaciones_pickle):
         with open(liquidaciones_pickle, "rb") as file:
             liquidaciones = pk.load(file)
     else:
-        (liquidaciones, _) = liquidaciones_maker(liquidaciones_path)
+        (liquidaciones, _, _) = liquidaciones_maker(liquidaciones_path)
         with open(liquidaciones_pickle, "wb") as file:
             pk.dump(liquidaciones, file)
 
-    liquidacion_ejemplo = liquidaciones[-3]
+    liquidacion_ejemplo = liquidaciones[0]
 
 
 def revisar_liquidacion(liquidacion: embarqueL) -> tuple[bool, list]:
@@ -87,9 +88,8 @@ def revisar_liquidacion(liquidacion: embarqueL) -> tuple[bool, list]:
         )
 
     # Revisamos que los Total Charges estén bien calculados
-    charges_index = cost.index.get_loc("Total Charges")  # Índice de Total Charges
-    total_charges = comision_valor + total_fees
-    if not abs(total_charges["USD"] - cost.loc["Total Charges", "USD"]) < epsilon:
+    total_charges = comision_valor + total_fees["USD"]
+    if not abs(total_charges - cost.loc["Total Charges", "USD"]) < epsilon:
         inconsistencias.append(
             "'Total Charges' no coincide con la suma de los fees y la comisión."
         )
@@ -115,13 +115,13 @@ if __name__ == "__main__":
     liquidaciones_inconsistencias = []
     for liquidacion in liquidaciones:
         idx = liquidacion.location
-        # try:
-        (hay_inconsistencias, _) = revisar_liquidacion(liquidacion)
-        if hay_inconsistencias:
-            liquidaciones_inconsistencias.append(idx)
-        # except Exception as e:
-        # print(f"La función tuvo problemas interpretando la liquidacion {idx}: {e}")
-        # it_works = False
+        try:
+            (hay_inconsistencias, _) = revisar_liquidacion(liquidacion)
+            if hay_inconsistencias:
+                liquidaciones_inconsistencias.append(idx)
+        except Exception as e:
+            print(f"La función tuvo problemas interpretando la liquidacion {idx}: {e}")
+            it_works = False
     print("Información general:")
     print(
         "La función revisar_liquidacion interpreta correctamente las liquidaciones:",

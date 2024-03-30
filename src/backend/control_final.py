@@ -16,6 +16,15 @@ import pickle as pkl
 
 # Importamos modulos propios
 if __name__ == "__main__":
+    import shutil
+
+    destination_datos_del_programa = (
+        r"C:\\Users\\spinc\\Desktop\\OCHO_FUEGOS\\src\\backend\\Datos del programa"
+    )
+    source_datos_del_programa = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\Datos del programa"
+    if not os.path.exists(destination_datos_del_programa):
+        shutil.copytree(source_datos_del_programa, destination_datos_del_programa)
+
     from src.config import variables as var
     from src.backend.embarques import pseudoControl
     from src.backend.liquidacion_reader import liquidaciones
@@ -25,6 +34,7 @@ else:
     from ..backend.liquidacion_reader import liquidaciones
 
 if __name__ == "__main__":
+
     # Paths to your input files
     embarques_path_ = (
         r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Base embarques.xlsx"
@@ -62,7 +72,7 @@ def control(
     tarifa_path: str,
     liquidaciones_path: str,
     update_loading_bar: callable = None,
-) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
     """
     Recibe los paths de los archivos de embarques (.xlsx), facturas (.xlsx), tarifa (.xlsx) y liquidaciones (folder)
     devuelve una tupla conteniendo:
@@ -236,8 +246,9 @@ def control(
             liquidaciones_con_CSG_no_pareadas = liquidacion_con_CSG.merge(
                 pseudo_control, how="left", on=key_liq, indicator=True
             )
+
             liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
-                list(liquidacion_con_CSG.columns).append("_merge")
+                list(liquidacion_con_CSG.columns) + ["_merge"]
             ]
             liquidaciones_con_CSG_no_pareadas = liquidaciones_con_CSG_no_pareadas[
                 liquidaciones_con_CSG_no_pareadas["_merge"] == "left_only"
@@ -256,8 +267,9 @@ def control(
                 liquidaciones_sin_CSG_no_pareadas = liquidacion_sin_CSG.merge(
                     pseudo_control, how="left", on=key_liq_incompleto, indicator=True
                 )
+                # print("No pareadas",list(liquidaciones_sin_CSG_no_pareadas.columns))
                 liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
-                    list(liquidacion_sin_CSG.columns).append("_merge")
+                    list(liquidacion_sin_CSG.columns) + ["_merge"]
                 ]
                 liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
                     liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
@@ -360,6 +372,9 @@ def control(
 
     liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
 
+    for df in [control_df, liquidaciones_no_pareadas]:
+        df.reset_index(drop=True, inplace=True)
+
     return (
         control_df,
         errores,
@@ -369,12 +384,10 @@ def control(
 
 
 if __name__ == "__main__":
-    control_df, errores, revisar = control(
+    control_df, errores, revisar, liquidaciones_no_pareadas = control(
         embarques_path_, facturas_path_, tarifa_path_, liquidaciones_path_
     )
-
-    control_df.dropna(subset=["TOTAL USD"], inplace=True)
-    control_df.reset_index(inplace=True, drop=True)
+    shutil.rmtree(destination_datos_del_programa)
 
     print("Control:")
     print(control_df)
@@ -383,3 +396,5 @@ if __name__ == "__main__":
     print(errores)
     print("Por revisar:")
     print(revisar)
+    print("Liquidaciones no pareadas:")
+    print(liquidaciones_no_pareadas)

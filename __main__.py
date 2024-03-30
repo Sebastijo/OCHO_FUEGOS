@@ -20,7 +20,9 @@ directory = var.directory
 # Obtenemos los paths que deben existir antes de correr el programa
 datos_folder = os.path.join(directory, "Datos del programa")
 variables_folder = os.path.join(datos_folder, "Variables")
-destination_cod_puerto_destino = os.path.join(variables_folder, "cod_puerto_destino.json")
+destination_cod_puerto_destino = os.path.join(
+    variables_folder, "cod_puerto_destino.json"
+)
 destination_precios_contrato = os.path.join(variables_folder, "precios_contrato.xlsx")
 destination_flete_real = os.path.join(variables_folder, "flete_real.xlsx")
 destination_costo_seco = os.path.join(variables_folder, "costo_seco.xlsx")
