@@ -49,7 +49,7 @@ main_list_liq_HFF = var.main_list_liq_HFF
 main_list_liq_HFF_SEA = var.main_list_liq_HFF_SEA
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HT_Sales Summary 020-30475115-Ocho Fuegos-1-1 .xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_Liquidation-8F_Air-AWB_157-84730612.xlsx"
     example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-045-91458345-X.xlsx"
 
 
@@ -154,6 +154,11 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
         embarque.columns = concatenated_string
         embarque = embarque.iloc[2:]
         embarque.reset_index(drop=True, inplace=True)
+
+        embarque.columns = [
+            str(col) if not isinstance(col, float) else "nan"
+            for col in embarque.columns
+        ]
 
         embarque.columns = [
             column.replace(" " + " ", " ")
@@ -416,12 +421,14 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
     main["总收益 FOB Total Return"] = 0
 
     null_checker = lambda x: (x in {0, "0"} or (isinstance(x, float) and np.isnan(x)))
+    main["价格 (人民币) Price RMB"] = main["价格 (人民币) Price RMB"].replace('-', np.nan)
     main.loc[
         ~main["数量 Quantity"].apply(null_checker)
         & main["价格 (人民币) Price RMB"].apply(null_checker),
         "日期 Date",
     ] = "No vendido"
     main.loc[main.index[-1], "日期 Date"] = np.nan
+    
 
     # Simplifacamos los pesos de las cajas (ej: 2*2.5KG -> 5KG)
 
@@ -440,6 +447,7 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
         "commission" in str(value).lower()
         for value in cost["其他费用 Additional Fees"].values
     ), f"La fila de comisión no fue encontrada en el archivo {liquidacion}: no existe una fila que contenga '{'Commission'}' en el archivo .xlsx."
+
     commission_location = cost[
         cost["其他费用 Additional Fees"].str.contains("commission", case=False)
     ].index[0]
@@ -508,9 +516,9 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
     return liquidacion_list, [1]
 
 
-def interpreter_JF(liquidacion: str) -> pd.DataFrame:
+def interpreter_BQ(liquidacion: str) -> pd.DataFrame:
     """
-    Esta función tiene como objetivo ajustar el formato de la liquidacion de Jumbo Fruit (203/2024) al formato standard para luego ser usados en liquidacion_standard.
+    Esta función tiene como objetivo ajustar el formato de la liquidacion de Jumbo Fruit (BQ) (203/2024) al formato standard para luego ser usados en liquidacion_standard.
 
     Args:
         liquidacion (str): Ruta del archivo de liquidación.
@@ -842,7 +850,7 @@ def interpreter(liquidacion: str) -> tuple[list, list]:
     elif filename.startswith("8F"):
         liquidacion_list = interpreter_standard(liquidacion)
     elif filename.startswith("BQ"):
-        liquidacion_list = interpreter_JF(liquidacion)
+        liquidacion_list = interpreter_BQ(liquidacion)
     elif filename.startswith("HFF"):
         if filename[4:].startswith("SEA"):
             liquidacion = interpreter_HFF_SEA(liquidacion)

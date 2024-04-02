@@ -371,6 +371,7 @@ def control(
     control_df = control_df[control_order]
 
     liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
+    liquidaciones_no_pareadas = liquidaciones_no_pareadas[liquidaciones_no_pareadas["CAJAS LIQUIDADAS"] != 0]
 
     for df in [control_df, liquidaciones_no_pareadas]:
         df.reset_index(drop=True, inplace=True)
