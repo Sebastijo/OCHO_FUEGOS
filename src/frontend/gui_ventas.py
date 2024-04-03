@@ -16,11 +16,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinterdnd2 import *
 import pandas as pd
-from xlsxwriter.workbook import Workbook
 import os
-
-# import sys
-# import threading
+import threading
 
 # modulos propios
 if __name__ == "__main__":
@@ -42,27 +39,31 @@ else:
     from .ventana import Ventana
     from ..backend.output_doc_maker import export
 
-    # Variables universales:
-    bg = var.bg  # Color de fondo
-    fg = var.fg  # Color de texto
-    title = var.title  # Título de la ventana principal
-    directory = var.directory  # Directorio de trabajo
+# Variables universales:
+bg = var.bg  # Color de fondo
+fg = var.fg  # Color de texto
+title = var.title  # Título de la ventana principal
+directory = var.directory  # Directorio de trabajo
 
-    datos_folder = os.path.join(directory, "Datos del programa")
-    control_path = os.path.join(
-        datos_folder, "output", "Control.xlsx"
-    )  # Path del control
+datos_folder = os.path.join(directory, "Datos del programa")
+control_path = os.path.join(
+    datos_folder, "output", "Control.xlsx"
+)  # Path del control
 
 
-def panqueca():
+def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     """
-    Función que corre el GUI de ventas. Genera el xls de control.
+    Función que define los objetos y posiciones de la GUI.
 
     Args:
         None
 
     Returns:
-        None
+        root: Ventana principal de la GUI.
+        mainFrame: Marco principal de la GUI.
+        barrasBusqueda: Diccionario con las barras de búsqueda de archivos.
+        frameFinalButtonsAndBar: Marco de los botones finales y barra de progreso.
+        ejecutar: Botón de ejecución.
 
     Raises:
         None
@@ -90,100 +91,6 @@ def panqueca():
         barrasBusqueda[tipo].grid(
             row=idx, column=0
         )  # Montamos la barra de busqueda en el frame
-
-    # Acción del botón de ejecución
-    def runVentas() -> None:
-        """
-        Función que se ejecuta al presionar el botón de ejecución.
-        """
-        ejecutar.disable()
-        try:
-            if os.path.exists(control_path):
-                with open(control_path, "w"):
-                    pass
-
-        except Exception as e:
-            error_message = f"""El archivo de Excel en la ubicación {control_path} está abierto,
-                           con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
-                           El error interno es: {e}"""
-            inputErrorWindow(root, error_message)
-            ejecutar.enable()
-            return
-        # Guardamos los paths de los archivos seleccionados
-        inputPaths = (
-            {}
-        )  # Diccionario que contiene los paths de los archivos seleccionados
-        for tipo in barrasBusqueda:
-            inputPaths[tipo] = (
-                barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
-            )
-
-        # Ejecutamos el programa de ventas
-        try:
-            control_df, errores, revisar, liquidaciones_no_pareadas = control(
-                inputPaths["embarques"],
-                inputPaths["facturas"],
-                inputPaths["tarifas"],
-                inputPaths["liquidaciones"],
-            )
-        except Exception as e:
-            inputErrorWindow(root, e)
-            ejecutar.enable()
-            return
-
-        # Exportamos los resultados a la carpeta de outputs
-        try:
-            export(control_df, liquidaciones_no_pareadas)
-
-        except Exception as e:
-            inputErrorWindow(root, e)
-            ejecutar.enable()
-            return
-
-        # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
-        frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
-
-        # Cambiamos el texto de los outputs
-        output[0].configure(
-            text=f"El resultado se encuentra disponible en\r {control_path}"
-        )
-        num_errores = sum(len(definition) for definition in errores.values())
-        num_revisar = len(revisar)
-        if num_errores + num_revisar == 0:
-            output[1].configure(text="No se detectaron errores en la ejecución")
-        else:
-            output[1].configure(
-                text=f"Hubo {num_errores} embarques cuya liquidación no se pudo leer\r y {num_revisar} embarques cuyas liquidaciones tienen inconsistencias"
-            )
-            output[-1].pack(padx=10, pady=(10, 10))
-            output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
-        outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
-        frameFinalButtonsAndBar.grid(
-            row=2, column=0, sticky=tk.E
-        )  # Mostramos los botones finales
-        ejecutar.enable()  # Habilitamos el botón de ejecución
-        # loading_bar.stop()  # Detenemos la barra de progreso
-        # loading_bar.pack_forget()  # Ocultamos la barra de progreso
-        return
-
-    # Creamos el contenido de los outputs:
-    outputFrame = tk.Frame(
-        mainFrame, bg=bg["window"], width=500, height=70, bd=5, relief=tk.SUNKEN
-    )
-    output = []
-    for i in range(2):
-        output.append(
-            tk.Label(outputFrame, width=81, bg=bg["window_text"], fg=fg["window_text"])
-        )
-        output[i].pack()
-    output.append(
-        Boton(
-            outputFrame,
-            "Reporte de errores",
-            lambda: print("por revisar:"),
-            "output_button",
-        )
-    )
 
     # Creación de los botones finales de output y de exit.
     frameFinalButtonsAndBar = tk.Frame(mainFrame, bd=4, bg=bg["window"])
@@ -231,6 +138,26 @@ def panqueca():
         root.quit()
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
+
+    # Creamos el contenido de los outputs:
+    outputFrame = tk.Frame(
+        mainFrame, bg=bg["window"], width=500, height=70, bd=5, relief=tk.SUNKEN
+    )
+    output = []
+    for i in range(2):
+        output.append(
+            tk.Label(outputFrame, width=81, bg=bg["window_text"], fg=fg["window_text"])
+        )
+        output[i].pack()
+    output.append(
+        Boton(
+            outputFrame,
+            "Reporte de errores",
+            lambda: print("por revisar:"),
+            "output_button",
+        )
+    )
+
     # Create and configure the progress bar
     style = ttk.Style()
     style.configure("TProgressbar", thickness=20)
@@ -264,9 +191,6 @@ def panqueca():
 
     # Hacer una función que una los threads y cierre la GUI. !!!!!
 
-    # Definimos el command del boton ejecutar
-    ejecutar.configure(command=runVentas)
-
     # Cargamos los botones a la ventana
     frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.E)
     frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
@@ -277,5 +201,199 @@ def panqueca():
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
 
+    return (
+        root,
+        barrasBusqueda,
+        frameFinalButtonsAndBar,
+        output,
+        outputFrame,
+        ejecutar,
+    )
+
+def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
+    """
+    Esta función prepara el programa para correr el backend
+
+    Args:
+        root: Ventana principal de la GUI.
+        ejecutar: Botón de ejecución.
+        barrasBusqueda: Diccionario con las barras de búsqueda de archivos.
+
+    Returns:
+        inputPaths: Diccionario con los paths de los archivos seleccionados.
+    """
+    ejecutar.disable()
+    try:
+        if os.path.exists(control_path):
+            with open(control_path, "w"):
+                pass
+
+    except Exception as e:
+        error_message = f"""El archivo de Excel en la ubicación {control_path} está abierto,
+                        con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
+                        El error interno es: {e}"""
+        inputErrorWindow(root, error_message)
+        ejecutar.enable()
+        return
+    # Guardamos los paths de los archivos seleccionados
+    inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
+    for tipo in barrasBusqueda:
+        inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
+
+    return inputPaths
+
+def sex(
+    embarques: str, facturas: str, tarifas: str, liquidacion_folder: str
+) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
+    """
+    Función que realiza el trabajo pesado del programa.
+    Corre todos los modulos del backend.
+
+    Args:
+        embarques: Path del archivo de embarques.
+        facturas: Path del archivo de facturas.
+        tarifas: Path del archivo de tarifas.
+        liquidacion_folder: Path de la carpeta con liquidaciones.
+
+    Returns:
+        control_df: DataFrame con el resultado del control.
+        errores: Diccionario con los errores encontrados.
+        revisar: Diccionario con los embarques que necesitan revisión.
+        liquidaciones_no_pareadas: DataFrame con las liquidaciones no pareadas.
+    """
+
+    # creamos el archivo de control
+    control_df, errores, revisar, liquidaciones_no_pareadas = control(
+        embarques,
+        facturas,
+        tarifas,
+        liquidacion_folder,
+    )
+
+    # Exportamos los resultados a la carpeta de outputs
+    export(control_df, liquidaciones_no_pareadas)
+
+    return errores, revisar
+
+def aftercare(
+    root: tk.Tk,
+    ejecutar: Boton,
+    output: list,
+    outputFrame: tk.Frame,
+    frameFinalButtonsAndBar: tk.Frame,
+    errores: dict,
+    revisar: dict,
+) -> None:
+    """
+    Organiza el GUI luego de correr la función principal.
+
+    Args:
+        root: Ventana principal de la GUI.
+        ejecutar: Botón de ejecución.
+        output: Lista con los outputs.
+        outputFrame: Marco de los outputs.
+        frameFinalButtonsAndBar: Marco de los botones finales y barra de progreso.
+        errores: Diccionario con los errores encontrados.
+        revisar: Diccionario con los embarques que necesitan revisión.
+
+    Returns:
+        None
+    """
+
+    # Verificamos error y, a la vez, mostramos errorWindow en caso de haber.
+    frameFinalButtonsAndBar.grid_forget()  # Borramos los botones finales
+
+    # Cambiamos el texto de los outputs
+    output[0].configure(
+        text=f"El resultado se encuentra disponible en\r {control_path}"
+    )
+    num_errores = sum(len(definition) for definition in errores.values())
+    num_revisar = len(revisar)
+    if num_errores + num_revisar == 0:
+        output[1].configure(text="No se detectaron errores en la ejecución")
+    else:
+        output[1].configure(
+            text=f"Hubo {num_errores} embarques cuya liquidación no se pudo leer\r y {num_revisar} embarques cuyas liquidaciones tienen inconsistencias"
+        )
+        output[-1].pack(padx=10, pady=(10, 10))
+        output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
+    outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
+    frameFinalButtonsAndBar.grid(
+        row=2, column=0, sticky=tk.E
+    )  # Mostramos los botones finales
+    ejecutar.enable()  # Habilitamos el botón de ejecución
+    # loading_bar.stop()  # Detenemos la barra de progreso
+    # loading_bar.pack_forget()  # Ocultamos la barra de progreso
+
+    return
+
+# Acción del botón de ejecución
+def runVentas(
+    root: tk.Tk,
+    ejecutar: Boton,
+    barrasBusqueda: dict,
+    output: list,
+    outputFrame: tk.Frame,
+    frameFinalButtonsAndBar: tk.Frame,
+) -> None:
+    """
+    Función que se ejecuta al presionar el botón de ejecución.
+    Esto prepara
+
+    - Prepara el GUI para correr el backend.
+    - Corre el backend
+    - Organiza el GUI luego de correr el backend.
+
+    Args:
+        root: Ventana principal de la GUI.
+        ejecutar: Botón de ejecución.
+        barrasBusqueda: Diccionario con las barras de búsqueda de archivos.
+
+    returns:
+    """
+    inputPaths = foreplay(root, ejecutar, barrasBusqueda)
+    try:
+        errores, revisar = sex(
+            inputPaths["embarques"],
+            inputPaths["facturas"],
+            inputPaths["tarifas"],
+            inputPaths["liquidaciones"],
+        )
+    except Exception as e:
+        inputErrorWindow(root, e)
+        ejecutar.enable()
+        return
+    aftercare(
+        root, ejecutar, output, outputFrame, frameFinalButtonsAndBar, errores, revisar
+    )
+
+def panqueca():
+    """
+    Función que corre el GUI de ventas. Genera el xls de control al presionar Ejecutar.
+    Orchestra todos los elementos del modulo.
+    """
+
+    (
+        root,
+        barrasBusqueda,
+        frameFinalButtonsAndBar,
+        output,
+        outputFrame,
+        ejecutar,
+    ) = main_window_maker()
+
+    ejecutar.configure(
+        command=lambda: runVentas(
+            root,
+            ejecutar,
+            barrasBusqueda,
+            output,
+            outputFrame,
+            frameFinalButtonsAndBar,
+        )
+    )
+
     # Inicio del bucle principal para la ejecución de la interfaz gráfica
     root.mainloop()
+
+    return
