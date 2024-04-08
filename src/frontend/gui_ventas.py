@@ -46,9 +46,7 @@ title = var.title  # Título de la ventana principal
 directory = var.directory  # Directorio de trabajo
 
 datos_folder = os.path.join(directory, "Datos del programa")
-control_path = os.path.join(
-    datos_folder, "output", "Control.xlsx"
-)  # Path del control
+control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
 
 
 def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
@@ -132,9 +130,6 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
 
     # Boton que cierra el programa, eliminando los threads abiertos
     def quitter():
-        # for thread in threading.enumerate():
-        #    if thread != threading.main_thread():
-        #        thread.join()
         root.quit()
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
@@ -161,42 +156,16 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     # Create and configure the progress bar
     style = ttk.Style()
     style.configure("TProgressbar", thickness=20)
-    # loading_bar = ttk.Progressbar(
-    #    frameFinalButtonsAndBar, mode="indeterminate", style="TProgressbar", length=450
-    # )
-
-    """
-    def update_loading_bar(progress):
-
-        Función que actualiza la barra de progreso.
-
-        return
-    """
-
-    # threader = []
-
-    """
-    def runVentas_thread():
-        
-        Función que ejecuta la función runVentas en un hilo.
-        
-        ejecutar.disable()
-        loading_bar.start()
-        loading_bar.pack()
-        thread = threading.Thread(target=runVentas, daemon=True)
-        thread.start()
-        threader.clear()
-        threader.append(thread)
-    """
-
-    # Hacer una función que una los threads y cierre la GUI. !!!!!
+    loading_bar = ttk.Progressbar(
+        frameFinalButtonsAndBar, mode="determinate", style="TProgressbar", length=450
+    )
 
     # Cargamos los botones a la ventana
     frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.E)
     frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
 
-    # loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
-    # loading_bar.pack_forget()
+    loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
+    loading_bar.pack_forget()
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
@@ -208,7 +177,9 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         output,
         outputFrame,
         ejecutar,
+        loading_bar,
     )
+
 
 def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
     """
@@ -222,7 +193,6 @@ def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
     Returns:
         inputPaths: Diccionario con los paths de los archivos seleccionados.
     """
-    ejecutar.disable()
     try:
         if os.path.exists(control_path):
             with open(control_path, "w"):
@@ -242,8 +212,13 @@ def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
 
     return inputPaths
 
+
 def sex(
-    embarques: str, facturas: str, tarifas: str, liquidacion_folder: str
+    embarques: str,
+    facturas: str,
+    tarifas: str,
+    liquidacion_folder: str,
+    update_loading_bar: callable = None,
 ) -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
     """
     Función que realiza el trabajo pesado del programa.
@@ -261,23 +236,23 @@ def sex(
         revisar: Diccionario con los embarques que necesitan revisión.
         liquidaciones_no_pareadas: DataFrame con las liquidaciones no pareadas.
     """
-
     # creamos el archivo de control
     control_df, errores, revisar, liquidaciones_no_pareadas = control(
         embarques,
         facturas,
         tarifas,
         liquidacion_folder,
+        update_loading_bar,
     )
 
     # Exportamos los resultados a la carpeta de outputs
-    export(control_df, liquidaciones_no_pareadas)
+    export(control_df, liquidaciones_no_pareadas, update_loading_bar)
 
     return errores, revisar
 
+
 def aftercare(
     root: tk.Tk,
-    ejecutar: Boton,
     output: list,
     outputFrame: tk.Frame,
     frameFinalButtonsAndBar: tk.Frame,
@@ -289,7 +264,6 @@ def aftercare(
 
     Args:
         root: Ventana principal de la GUI.
-        ejecutar: Botón de ejecución.
         output: Lista con los outputs.
         outputFrame: Marco de los outputs.
         frameFinalButtonsAndBar: Marco de los botones finales y barra de progreso.
@@ -321,17 +295,16 @@ def aftercare(
     frameFinalButtonsAndBar.grid(
         row=2, column=0, sticky=tk.E
     )  # Mostramos los botones finales
-    ejecutar.enable()  # Habilitamos el botón de ejecución
-    # loading_bar.stop()  # Detenemos la barra de progreso
-    # loading_bar.pack_forget()  # Ocultamos la barra de progreso
 
     return
+
 
 # Acción del botón de ejecución
 def runVentas(
     root: tk.Tk,
     ejecutar: Boton,
     barrasBusqueda: dict,
+    loading_bar: ttk.Progressbar,
     output: list,
     outputFrame: tk.Frame,
     frameFinalButtonsAndBar: tk.Frame,
@@ -348,24 +321,88 @@ def runVentas(
         root: Ventana principal de la GUI.
         ejecutar: Botón de ejecución.
         barrasBusqueda: Diccionario con las barras de búsqueda de archivos.
+        loading_bar: Barra de progreso.
+        output: Lista con los outputs.
+        outputFrame: Marco de los outputs.
+        frameFinalButtonsAndBar: Marco de los botones finales y barra de progreso.
 
-    returns:
+    Returns:
+        None
     """
-    inputPaths = foreplay(root, ejecutar, barrasBusqueda)
-    try:
+    ejecutar.disable()
+    # loading_bar.start()
+    loading_bar.pack()
+
+    def update_loading_bar():
+        """
+        Función que actualiza la barra de progreso.
+        """
+        # Contamos la cantidad de operaciones que se realizarán (una por archivo)
+
+        if os.path.isdir(inputPaths["liquidaciones"]):
+            liquidations = len(os.listdir(inputPaths["liquidaciones"]))
+        else:
+            liquidations = 1
+        operaciones_de_embarque = 4
+        operaciones_control_final = 3
+        operaciones_de_exportacion = 2
+        holgura = 1
+        total_operations = (
+            operaciones_de_embarque
+            + liquidations
+            + operaciones_control_final
+            + operaciones_de_exportacion
+            + holgura
+        )
+
+        loading_bar["value"] += 100 / total_operations
+        return
+
+    sex_result = {"errores": None, "revisar": None}
+
+    def sex_threader():
         errores, revisar = sex(
             inputPaths["embarques"],
             inputPaths["facturas"],
             inputPaths["tarifas"],
             inputPaths["liquidaciones"],
+            update_loading_bar,
         )
+        sex_result["errores"] = errores
+        sex_result["revisar"] = revisar
+        # Updating GUI after process finishes
+        root.event_generate("<<ProcessFinished>>", when="tail")
+
+    inputPaths = foreplay(root, ejecutar, barrasBusqueda)
+
+    try:
+        # Run function in a separate thread to avoid freezing GUI
+        threading.Thread(target=sex_threader).start()
+
     except Exception as e:
+        # Handle exceptions here
         inputErrorWindow(root, e)
         ejecutar.enable()
         return
-    aftercare(
-        root, ejecutar, output, outputFrame, frameFinalButtonsAndBar, errores, revisar
-    )
+
+    def on_sex_finnished(event):
+        errores = sex_result["errores"]
+        revisar = sex_result["revisar"]
+        aftercare(
+            root,
+            output,
+            outputFrame,
+            frameFinalButtonsAndBar,
+            errores,
+            revisar,
+        )
+        # loading_bar.stop()
+        loading_bar.pack_forget()
+        ejecutar.enable()
+
+    # Bind event for process finished
+    root.bind("<<ProcessFinished>>", on_sex_finnished)
+
 
 def panqueca():
     """
@@ -380,6 +417,7 @@ def panqueca():
         output,
         outputFrame,
         ejecutar,
+        loading_bar,
     ) = main_window_maker()
 
     ejecutar.configure(
@@ -387,6 +425,7 @@ def panqueca():
             root,
             ejecutar,
             barrasBusqueda,
+            loading_bar,
             output,
             outputFrame,
             frameFinalButtonsAndBar,

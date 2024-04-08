@@ -156,17 +156,8 @@ def control(
                     (".xlsx", ".xls")
                 ), f"El archivo '{input}' no es un archivo de Excel."
 
-        # Contamos la cantidad de operaciones que se realizarán (una por archivo)
-        if update_loading_bar:
-            if os.path.isdir(liquidaciones_path):
-                liquidations = len(os.listdir(liquidaciones_path))
-            else:
-                liquidations = 1
-            total_operations = 1 + 4 + 2 + liquidations
-        else:
-            total_operations = 0
         if update_loading_bar:  # 1ra operacion
-            update_loading_bar(1 / total_operations * 100)
+            update_loading_bar()
 
         # Creamos el pseudocontrol
         pseudo_control = pseudoControl(
@@ -174,19 +165,18 @@ def control(
             facturas_path,
             tarifa_path,
             update_loading_bar,
-            total_operations,
         )
 
         if update_loading_bar:  # 5ta operacion
-            update_loading_bar(1 / total_operations * 100)
+            update_loading_bar()
 
         # Creamos la liquidaciones
         liquidacion, errores, revisar = liquidaciones(
-            liquidaciones_path, update_loading_bar, total_operations
+            liquidaciones_path, update_loading_bar
         )
 
         if update_loading_bar:  # 6ta operacion
-            update_loading_bar(1 / total_operations * 100)
+            update_loading_bar()
 
     # Separamos las liquidaciones con y sin CSG
     liq_con_CSG = []

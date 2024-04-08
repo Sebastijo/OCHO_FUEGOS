@@ -78,7 +78,6 @@ def import_and_check(
     facturas_path: str,
     tarifa_path: str,
     update_loading_bar: callable = None,
-    total_operations: int = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Function to be called in pseudoControl with the objective of importing and cheking the validity of the inputted Excel files
@@ -96,7 +95,6 @@ def import_and_check(
         facturas_path (str): Path to the facturas Excel file.
         tarifa_path (str): Path to the tarifa Excel file.
         update_loading_bar (callable, optional): Function to update the loading bar. Defaults to None.
-        total_operations (int, optional): Total operations to be performed. Defaults to None.
 
     Returns:
         tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]: Tuple with the dataframes.
@@ -138,18 +136,18 @@ def import_and_check(
         else:
             embarques = pd.read_excel(embarques_path, sheet_name="Hoja1", dtype=str)
             if update_loading_bar:  # 2ra operacion
-                update_loading_bar(1 / total_operations * 100)
+                update_loading_bar()
             facturas = pd.read_excel(facturas_path, sheet_name="BillsRows", dtype=str)
             if update_loading_bar:  # 3ra operacion
-                update_loading_bar(1 / total_operations * 100)
+                update_loading_bar()
             tarifa = pd.read_excel(tarifa_path, sheet_name="Instructives", dtype=str)
             if update_loading_bar:  # 4ra operacion
-                update_loading_bar(1 / total_operations * 100)
+                update_loading_bar()
         precios_contrato = pd.read_excel(precios_contrato_path, dtype=str)
         flete_real = pd.read_excel(flete_real_path, dtype=str)
         costo_seco = pd.read_excel(costo_seco_path, dtype=str)
         if update_loading_bar:  # 5ta operacion
-            update_loading_bar(1 / total_operations * 100)
+            update_loading_bar()
 
     except Exception as e:
         raise ValueError(
@@ -323,7 +321,6 @@ def pseudoControl(
     facturas_path: str,
     tarifa_path: str,
     update_loading_bar: callable = None,
-    total_operations: int = None,
 ) -> pd.DataFrame:
     """
     Esta función toma tres archivos: embarques, tarifa y factura para agregar la información pertinente a un archivo de control de embarques.
@@ -378,7 +375,6 @@ def pseudoControl(
             facturas_path,
             tarifa_path,
             update_loading_bar,
-            total_operations,
         )
     )
 

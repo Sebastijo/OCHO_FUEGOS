@@ -477,7 +477,7 @@ def feature_engine(embarque: embarqueL) -> None:
 
 # ARREGLAR COMENTARIO INTRODUCTORIO
 def liquidaciones(
-    folder: str, update_loading_bar: callable = None, total_operations: int = None
+    folder: str, update_loading_bar: callable = None
 ) -> tuple[list, dict, dict]:
     """
     Recieves a path to an Excel file or PDF file containing the liquidactions in the format of Happy Farm Fruit, Jumbo Fruit, 12Islands, or standard.
@@ -489,7 +489,9 @@ def liquidaciones(
     2) A dictonary, the keys are tuples with the name of the PDF and the page number of the error and the values are the errors, as a list, found in the format of the embarques.
 
     Args:
-        liquidaciones (list): List of lists of DataFrames
+        folder (str): Path to the folder containing the liquidaciones
+        update_loading_bar (callable): Function to update the loading bar
+
 
     Returns:
         tuple: tuple with two coordinates (list, dict, dict)
@@ -536,7 +538,7 @@ def liquidaciones(
         for liquidacion in os.listdir(folder):
             procesarLiquidacionYAlmacenarDatos(liquidacion)
             if update_loading_bar:  # liquidacion operacion
-                update_loading_bar(1 / total_operations * 100)
+                update_loading_bar()
 
     else:
         assert os.path.isfile(
@@ -544,7 +546,7 @@ def liquidaciones(
         ), f"La ruta del archivo {folder} no es un archivo ni una carpeta."
         procesarLiquidacionYAlmacenarDatos(folder)
         if update_loading_bar:  # liquidacion operacion
-            update_loading_bar(1 / total_operations * 100)
+            update_loading_bar()
 
     assert len(ubicaciones) == len(
         embarques

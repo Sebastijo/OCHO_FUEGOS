@@ -63,7 +63,7 @@ if __name__ == "__main__":
     liquidaciones_no_pareadas = pd.read_pickle(liq_no_pareadas_pickle)
 
 
-def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame):
+def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame, update_loading_bar: callable = None):
     """
     Esta función toma los resultados del programa y los exporta a un archivo Excel.
 
@@ -112,6 +112,9 @@ def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame):
             # Apply formatting to Control
             apply_formatting(worksheet1, control_df)
 
+            if update_loading_bar is not None:
+                update_loading_bar()
+
             # Add Liquidaciones no pareadas with liq_no_pareadas
             liq_no_pareadas.to_excel(
                 writer,
@@ -124,6 +127,10 @@ def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame):
 
             # Apply formatting to Liquidaciones no pareadas
             apply_formatting(worksheet2, liq_no_pareadas)
+
+            if update_loading_bar is not None:
+                update_loading_bar()
+                
     except Exception as e:
         raise RuntimeError(f"""El archivo de Excel en la ubicación {control_path} está abierto,
                         con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
