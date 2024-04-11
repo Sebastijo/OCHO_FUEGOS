@@ -80,7 +80,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         "embarques": "Seleccione un archivo .xls de embarques",
         "facturas": "Seleccione un archivo .xls de facturas",
         "tarifas": "Seleccione un archivo .xls de tarifas",
-        "liquidaciones": "Seleccione una carpeta con liquidaciones de 12Islands",
+        "liquidaciones": "Seleccione una carpeta con liquidaciones",
     }
     barrasBusqueda = {}  # Lista que contiene las barras de busqueda
     for idx, tipo in enumerate(contents):
@@ -330,8 +330,6 @@ def runVentas(
         None
     """
     ejecutar.disable()
-    # loading_bar.start()
-    loading_bar.pack()
 
     def update_loading_bar():
         """
@@ -377,11 +375,14 @@ def runVentas(
 
     try:
         # Run function in a separate thread to avoid freezing GUI
+        # loading_bar.start()
+        loading_bar.pack()
         threading.Thread(target=sex_threader).start()
 
     except Exception as e:
         # Handle exceptions here
         inputErrorWindow(root, e)
+        loading_bar.pack_forget()
         ejecutar.enable()
         return
 

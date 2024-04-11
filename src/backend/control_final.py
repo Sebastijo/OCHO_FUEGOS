@@ -361,7 +361,18 @@ def control(
     control_df = control_df[control_order]
 
     liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
-    liquidaciones_no_pareadas = liquidaciones_no_pareadas[liquidaciones_no_pareadas["CAJAS LIQUIDADAS"] != 0]
+    liquidaciones_no_pareadas = liquidaciones_no_pareadas[
+        liquidaciones_no_pareadas["CAJAS LIQUIDADAS"] != 0
+    ]
+
+    # Agregamos las liquidaciones sin folio a la base control a la mala
+    no_par_no_folio = liquidaciones_no_pareadas[
+        liquidaciones_no_pareadas["FOLIO"].isnull()
+    ]
+    liquidaciones_no_pareadas = liquidaciones_no_pareadas[
+        liquidaciones_no_pareadas["FOLIO"].notnull()
+    ]
+    control_df = pd.concat([control_df, no_par_no_folio])
 
     for df in [control_df, liquidaciones_no_pareadas]:
         df.reset_index(drop=True, inplace=True)
