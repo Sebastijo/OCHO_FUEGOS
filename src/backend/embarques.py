@@ -638,5 +638,3 @@ if __name__ == "__main__":
 
     print("Control de embarques (sin liquidaciones):")
     print(control)
-
-    print("Observación:", "Falta la parte en rojo en la referencia")

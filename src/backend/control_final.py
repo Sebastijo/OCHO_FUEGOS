@@ -66,6 +66,146 @@ key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
 
 
+def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
+    """
+    Recibe un DataFrame con las liquidacioens y devuelve el DataFrame con los siguientes cambios:
+    - Deja un único elemento por cada key_liq, si tiene CSG, o para cada key_liq_incompleto, si no tiene CSG (elimina los duplicados).
+    - El representante de cada key_liq, en cada feature donde haya habido una diferencia entre los duplicados, se convierte a una tupla con el valor de la columna de cada representante.
+    - La cantidades globales (que no aplican a una caja en particular, si no una cantidad total) se suman.
+
+    Args:
+        df (pd.DataFrame): DataFrame con las liquidaciones.
+
+    Returns:
+        pd.DataFrame: DataFrame con los cambios especificados.
+
+    Raises:
+        AssertionError: Si el input no es un DataFrame.
+    """
+    assert isinstance(
+        liquidaciones, pd.DataFrame
+    ), f"El input '{liquidaciones}' no es un DataFrame. En la función 'simplifier'. No se pudieron unir los pallets repetidos."
+
+    def unioner(df):
+        """
+        Recibe un DataFrame y lo reduce a un solo representante (fila). Si hay diferencias entre los representantes, estas se convierten a tuplas.
+        Si existe una columna con el nombre "CAJAS", la columna siempre se convierte en una tupla con la canidad de cajas de cada representante.
+        """
+        simp_df_data = {}
+        # Reducimos todas las filas a una sola fila, con cada elemento, de haber diferencias o ser CAJAS, convertido a una tupla.
+        for column in df.columns:
+            value = tuple(df[column].tolist())
+            value = tuple(
+                None if isinstance(x, (int, float)) and np.isnan(x) else x
+                for x in value
+            )
+            columnas_cuantitativas = {
+                "CAJAS LIQUIDADAS",
+                "TOTAL RMB",
+                "TOTAL USD",
+                "RETORNO FOB",
+                "COSTO",
+                "COMISION",
+                "COSTO Y COMISION",
+                "LIQ FINAL",
+            }
+            if (
+                (
+                    (not column in columnas_cuantitativas)
+                    and all(elem == value[0] for elem in value)
+                )
+                or len(value) == 1
+                or all(x is np.nan for x in value)
+            ):
+                value = value[0]
+            simp_df_data[column] = [value]
+        simp_df = pd.DataFrame(simp_df_data)
+
+        return simp_df
+
+    # Reducimos el DataFrame a un solo representante por key_liq y key_liq_incompleto, según corresponda
+    # Harvest Time (Alex) es el único que usa el key_liq
+    if CSG:
+        simplified = (
+            liquidaciones.groupby(key_liq).apply(unioner).reset_index(drop=True)
+        )
+    else:
+        simplified = (
+            liquidaciones.groupby(key_liq_incompleto)
+            .apply(unioner)
+            .reset_index(drop=True)
+        )
+
+    # SUMAMOS TUPLAS DECEADAS: CAJAS SUMADAS, FACT PROFORMA $ TOTAL SUMADAS, PRECIO CONTRATO SUMADAS
+    def sumador_de_tuplas(cell):
+        if isinstance(cell, tuple):
+            cell = tuple(0 if pd.isna(x) else x for x in cell)
+            return sum(cell)
+        else:
+            return cell
+
+    columnas_por_sumar = [
+        "CAJAS LIQUIDADAS",
+        "TOTAL RMB",
+        "TOTAL USD",
+        "RETORNO FOB",
+        "COSTO",
+        "COMISION",
+        "COSTO Y COMISION",
+        "LIQ FINAL",
+    ]
+
+    for columna in columnas_por_sumar:
+        simplified[columna] = (
+            simplified[columna].apply(sumador_de_tuplas).reset_index(drop=True)
+        )
+
+    columnas_por_caja = [
+        "RMB/CJ",
+        "RETORNO FOB/CJ",
+        "COSTO/CJ",
+        "COMISION/CJ",
+    ]
+    columnas_globales = [
+        "TOTAL RMB",
+        "RETORNO FOB",
+        "COSTO",
+        "COMISION",
+    ]
+
+    for columna_cj, columna_gl in zip(columnas_por_caja, columnas_globales):
+        simplified[columna_cj] = simplified[columna_gl] / simplified["CAJAS LIQUIDADAS"]
+
+    columnas_por_kg = [
+        "COSTO/KG",
+        "COMISION/KG",
+    ]
+
+    columnas_globales = [
+        "COSTO",
+        "COMISION",
+    ]
+
+    cajas_liquidadas = simplified["CAJAS LIQUIDADAS"].copy()
+    simplified["CAJAS LIQUIDADAS"] = simplified["CAJAS LIQUIDADAS"].astype(float)
+    kg_net_cj = liquidaciones["KG NET/CAJA"].copy()
+    simplified["KG NET/CAJA"] = simplified["KG NET/CAJA"].astype(float)
+
+    simplified = simplified.reset_index(drop=True)
+    cajas_liquidadas = cajas_liquidadas.reset_index(drop=True)
+    kg_net_cj = kg_net_cj.reset_index(drop=True)
+
+    for columna_kg, columna_gl in zip(columnas_por_kg, columnas_globales):
+        simplified[columna_kg] = simplified[columna_gl] / (
+            simplified["KG NET/CAJA"] * simplified["CAJAS LIQUIDADAS"]
+        )
+
+    simplified["CAJAS LIQUIDADAS"] = cajas_liquidadas
+    simplified["KG NET/CAJA"] = kg_net_cj
+
+    return simplified
+
+
 def control(
     embarques_path: str,
     facturas_path: str,
@@ -215,8 +355,6 @@ def control(
         ]:
             control_df[column] = None
     else:
-        no_vendidos_con_CSG = pd.DataFrame()
-        no_vendidos_sin_CSG = pd.DataFrame()
         liquidaciones_sin_CSG_no_pareadas = pd.DataFrame()
         liquidaciones_con_CSG_no_pareadas = pd.DataFrame()
 
@@ -226,8 +364,9 @@ def control(
         # Concatenamos las liquidaciones con y sin CSG
         if len(liq_con_CSG) > 0:  # Si hay liquidaciones con CSG
             liquidacion_con_CSG = pd.concat(liq_con_CSG)
+            liquidacion_con_CSG_simp = simplifier(liquidacion_con_CSG, CSG=True)
             control_df = pseudo_control.merge(
-                liquidacion_con_CSG,
+                liquidacion_con_CSG_simp,
                 how="left",
                 on=key_liq,
             )
@@ -246,8 +385,9 @@ def control(
 
             if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
+                liquidacion_sin_CSG_simp = simplifier(liquidacion_sin_CSG, CSG=False)
                 control_df = control_df.merge(
-                    liquidacion_sin_CSG,
+                    liquidacion_sin_CSG_simp,
                     how="left",
                     on=key_liq_incompleto,
                     suffixes=("_con", "_sin"),
@@ -267,8 +407,9 @@ def control(
 
         else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
+            liquidacion_sin_CSG_simp = simplifier(liquidacion_sin_CSG, CSG=False)
             control_df = pseudo_control.merge(
-                liquidacion_sin_CSG,
+                liquidacion_sin_CSG_simp,
                 how="left",
                 on=key_liq_incompleto,
             )

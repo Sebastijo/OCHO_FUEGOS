@@ -474,7 +474,6 @@ def feature_engine(embarque: embarqueL) -> None:
     columns.insert(1, ubicacion_column)
     embarque.main = embarque.main[columns]
 
-
 # ARREGLAR COMENTARIO INTRODUCTORIO
 def liquidaciones(
     folder: str, update_loading_bar: callable = None
