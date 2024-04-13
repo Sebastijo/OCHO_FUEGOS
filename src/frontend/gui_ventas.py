@@ -136,7 +136,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
-        mainFrame, bg=bg["window"], width=500, height=70, bd=5, relief=tk.SUNKEN
+        mainFrame, bg=bg["window"], width=500, height=70, bd=5, relief=tk.SUNKEN, padx=10
     )
     output = []
     for i in range(2):
@@ -161,7 +161,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     )
 
     # Cargamos los botones a la ventana
-    frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.E)
+    frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.EW)
     frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
 
     loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
@@ -291,9 +291,9 @@ def aftercare(
         )
         output[-1].pack(padx=10, pady=(10, 10))
         output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
-    outputFrame.grid(row=1, column=0)  # Mostramos el frame de los outputs
+    outputFrame.grid(row=1, column=0, sticky=tk.EW)  # Mostramos el frame de los outputs
     frameFinalButtonsAndBar.grid(
-        row=2, column=0, sticky=tk.E
+        row=2, column=0, sticky=tk.EW
     )  # Mostramos los botones finales
 
     return
@@ -341,9 +341,10 @@ def runVentas(
             liquidations = len(os.listdir(inputPaths["liquidaciones"]))
         else:
             liquidations = 1
-        operaciones_de_embarque = 4
-        operaciones_control_final = 3
-        operaciones_de_exportacion = 2
+        liquidations += 1
+        operaciones_de_embarque = 13
+        operaciones_control_final = 7
+        operaciones_de_exportacion = 4
         holgura = 1
         total_operations = (
             operaciones_de_embarque
@@ -381,7 +382,7 @@ def runVentas(
     # Run function in a separate thread to avoid freezing GUI
     # loading_bar.start()
     loading_bar['value'] = 0
-    loading_bar.pack()
+    loading_bar.pack(expand=True, fill=tk.X)
     threading.Thread(target=sex_threader).start()
 
     def on_sex_finnished(event):

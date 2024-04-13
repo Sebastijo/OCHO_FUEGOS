@@ -398,14 +398,19 @@ def feature_engine(embarque: embarqueL) -> None:
         stringed_df = ""
         for column in df.columns:
             column_processed = str(column).rstrip("：").rstrip(":").rstrip(" ") + ":"
-            stringed_df += "| " + column_processed + " " 
+            stringed_df += "| " + column_processed + " "
             for idx, element in enumerate(df[column]):
                 if idx == len(df[column]) - 1:
                     stringed_df += str(element) + " "
                 else:
                     stringed_df += str(element) + "; "
 
-        stringed_df = stringed_df.replace("_x000D_", " ").replace("\n", " ").replace(" nan ", " ").replace("nan;", "nan")
+        stringed_df = (
+            stringed_df.replace("_x000D_", " ")
+            .replace("\n", " ")
+            .replace(" nan ", " ")
+            .replace("nan;", "nan")
+        )
         stringed_df = stringed_df.lstrip("|")
         return stringed_df
 
@@ -473,6 +478,7 @@ def feature_engine(embarque: embarqueL) -> None:
     ubicacion_column = columns.pop()
     columns.insert(1, ubicacion_column)
     embarque.main = embarque.main[columns]
+
 
 # ARREGLAR COMENTARIO INTRODUCTORIO
 def liquidaciones(
@@ -583,6 +589,9 @@ def liquidaciones(
 
         # Agregamos el embarque a la lista de embarques_
         embarques_.append(embarque)
+    
+    if update_loading_bar:
+                update_loading_bar()
 
     return embarques_, errores, revisar
 

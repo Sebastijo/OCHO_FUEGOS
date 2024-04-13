@@ -328,6 +328,9 @@ def control(
         else:
             liq_sin_CSG.append(embarques.main)
 
+    if update_loading_bar:  # 7ta operacion
+            update_loading_bar()
+
     # Si no hay liquidaciones, entonces el control final es el pseudo control con las columnas de liquidación vacías.
     if len(liq_sin_CSG) + len(liq_con_CSG) == 0:
         control_df = pseudo_control
@@ -383,6 +386,9 @@ def control(
                 liquidaciones_con_CSG_no_pareadas["_merge"] == "left_only"
             ]
 
+            if update_loading_bar:  # 8va operacion
+                update_loading_bar()
+
             if len(liq_sin_CSG) > 0:
                 liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
                 liquidacion_sin_CSG_simp = simplifier(liquidacion_sin_CSG, CSG=False)
@@ -405,6 +411,8 @@ def control(
                     liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
                 ]
 
+                if update_loading_bar:  # 9na operacion
+                    update_loading_bar()
         else:  # Si no hay liquidaciones con CSG
             liquidacion_sin_CSG = pd.concat(liq_sin_CSG)
             liquidacion_sin_CSG_simp = simplifier(liquidacion_sin_CSG, CSG=False)
@@ -424,6 +432,9 @@ def control(
             liquidaciones_sin_CSG_no_pareadas = liquidaciones_sin_CSG_no_pareadas[
                 liquidaciones_sin_CSG_no_pareadas["_merge"] == "left_only"
             ]
+            if update_loading_bar:  # 8va operacion
+                update_loading_bar()
+                update_loading_bar()
 
         # Obtenemos las liquidaciones no pareadas
         liquidaciones_sin_CSG_no_pareadas["CSG"] = np.nan
@@ -469,6 +480,9 @@ def control(
                 ),
                 axis=1,
             )
+        
+        if update_loading_bar:  # 10ma operacion
+            update_loading_bar()
 
     df_output = [control_df, liquidaciones_no_pareadas]
     for idx, df in enumerate(df_output):
@@ -518,6 +532,9 @@ def control(
     for df in [control_df, liquidaciones_no_pareadas]:
         df.reset_index(drop=True, inplace=True)
 
+    if update_loading_bar:
+        update_loading_bar()
+        
     return (
         control_df,
         errores,

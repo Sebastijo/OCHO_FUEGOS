@@ -18,8 +18,6 @@ import numpy as np
 from datetime import datetime
 import os
 import json
-import sys
-
 
 # Definimos la fecha actual
 fecha_actual = datetime.now().date()
@@ -251,7 +249,7 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
                 "FACT PROFORMA $ TOTAL",
                 "PRECIO CONTRATO",
                 "BRUTOS_2",
-                "FLETE_TOTAL",
+                "FLETE TOTAL",
                 "GASTOS LOCALES CLP",
                 "GASTOS LOCALES USD",
                 "FLETE TOTAL 2",
@@ -290,14 +288,27 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
 
     # SUMAMOS TUPLAS DECEADAS: CAJAS SUMADAS, FACT PROFORMA $ TOTAL SUMADAS, PRECIO CONTRATO SUMADAS
     def sumador_de_tuplas(cell):
+        def int_or_float(x):
+            try:
+                x = int(x)
+            except:
+                try:
+                    x = float(x)
+                except:
+                    pass
+            return x
+
         if isinstance(cell, tuple):
-            cell = tuple(0 if pd.isna(x) else x for x in cell)
+            cell = tuple(0 if pd.isna(x) else int_or_float(x) for x in cell)
             return sum(cell)
         else:
             return cell
 
     columnas_por_sumar = [
         "CAJAS",
+        "PALLETS",
+        "NETOS",
+        "BRUTOS",
         "FACT PROFORMA $ TOTAL",
         "PRECIO CONTRATO",
         "BRUTOS_2",
@@ -306,6 +317,7 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
         "GASTOS LOCALES USD",
         "FLETE TOTAL 2",
     ]
+
     for columna in columnas_por_sumar:
         pseudocontrol[columna] = pseudocontrol[columna].apply(sumador_de_tuplas)
 
@@ -397,6 +409,9 @@ def pseudoControl(
         )
     )
 
+    if update_loading_bar:  # 6ta operacion
+            update_loading_bar()
+
     # Traducimos
     embarques.rename(
         columns=embarquesDict,
@@ -426,6 +441,9 @@ def pseudoControl(
     # Agregamos los Freight Costs a embarques
     embarques = pd.merge(embarques, tarifa, on="INSTRUCTIVO", how="left")
 
+    if update_loading_bar:  # 7ta operacion
+            update_loading_bar()
+
     # Definimos las keys de los dataframes
     embarques["key"] = embarques.apply(lambda row: tuple(row[key_columns]), axis=1)
     facturas["key"] = facturas.apply(lambda row: tuple(row[key_columns]), axis=1)
@@ -436,12 +454,18 @@ def pseudoControl(
     # Definimos el dataframe final "control"
     control = pd.merge(embarques, facturas, on="key", how="left")
 
+    if update_loading_bar:  # 8va operacion
+            update_loading_bar()
+
     # Agregamos los precios de contrato al dataframe de control. Esto agrega la columna "PRECIO CONTRATO $/CAJA"
     precios_contrato["KG NET/CAJA"] = precios_contrato["KG NET/CAJA"].apply(
         simplify_decimal
     )
 
     control = pd.merge(control, precios_contrato, on=key_precios_contrato, how="left")
+
+    if update_loading_bar:  # 9na operacion
+            update_loading_bar()
 
     # Agregamos los datos de flete real
     columnas_por_crear_flete_real = [
@@ -466,6 +490,9 @@ def pseudoControl(
     # Las columnas agregadas a continuación, serán borradas eventualmetne
     control["KG_netos_BL"] = control.groupby("AWB - BL")["NETOS"].transform("sum")
     control = control.merge(flete_real, on="AWB - BL", how="left")
+
+    if update_loading_bar:  # 10ma operacion
+            update_loading_bar()
 
     # Calculamos las columnas necesarias
     for column, column_source in zip(
@@ -494,6 +521,9 @@ def pseudoControl(
     )
     control["CAJAS"] = pd.to_numeric(control["CAJAS"], errors="coerce")
     control["PRECIO CONTRATO"] = control["PRECIO CONTRATO $/CAJA"] * control["CAJAS"]
+
+    if update_loading_bar:  # 11va operacion
+            update_loading_bar()
 
     # Parse the columns
     date_columns = [
@@ -553,6 +583,9 @@ def pseudoControl(
     control["FACT EXPORTACION $/CAJA"] = None  # Columna vacía
 
     control["FACT EXPORTACION $ TOTAL"] = None  # Columna vacía
+
+    if update_loading_bar:  # 12va operacion
+            update_loading_bar()
 
     # BillBL v.s. AWB - BL
 
@@ -640,6 +673,9 @@ def pseudoControl(
     control = simplifier(control)
 
     control = control[column_order]
+
+    if update_loading_bar:  # 13va operacion
+            update_loading_bar()
 
     return control
 

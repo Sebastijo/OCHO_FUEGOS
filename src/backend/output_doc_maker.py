@@ -106,13 +106,16 @@ def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame, update_loadi
                 writer, sheet_name="Control", startrow=1, header=False, index=False
             )
 
+            if update_loading_bar:
+                update_loading_bar()
+
             workbook = writer.book
             worksheet1 = writer.sheets["Control"]
 
             # Apply formatting to Control
             apply_formatting(worksheet1, control_df)
 
-            if update_loading_bar is not None:
+            if update_loading_bar:
                 update_loading_bar()
 
             # Add Liquidaciones no pareadas with liq_no_pareadas
@@ -123,6 +126,10 @@ def export(control_df: pd.DataFrame, liq_no_pareadas: pd.DataFrame, update_loadi
                 header=False,
                 index=False,
             )
+
+            if update_loading_bar:
+                update_loading_bar()
+                
             worksheet2 = writer.sheets["Liquidaciones no pareadas"]
 
             # Apply formatting to Liquidaciones no pareadas
