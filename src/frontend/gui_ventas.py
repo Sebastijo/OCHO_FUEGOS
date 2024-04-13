@@ -356,37 +356,42 @@ def runVentas(
         loading_bar["value"] += 100 / total_operations
         return
 
-    sex_result = {"errores": None, "revisar": None}
+    sex_result = {"errores": None, "revisar": None, "Exception": False}
 
     def sex_threader():
-        errores, revisar = sex(
-            inputPaths["embarques"],
-            inputPaths["facturas"],
-            inputPaths["tarifas"],
-            inputPaths["liquidaciones"],
-            update_loading_bar,
-        )
-        sex_result["errores"] = errores
-        sex_result["revisar"] = revisar
-        # Updating GUI after process finishes
-        root.event_generate("<<ProcessFinished>>", when="tail")
+        try:
+            errores, revisar = sex(
+                inputPaths["embarques"],
+                inputPaths["facturas"],
+                inputPaths["tarifas"],
+                inputPaths["liquidaciones"],
+                update_loading_bar,
+            )
+            sex_result["errores"] = errores
+            sex_result["revisar"] = revisar
+            # Updating GUI after process finishes
+            root.event_generate("<<ProcessFinished>>", when="tail")
+        except Exception as e:
+            sex_result["Exception"] = e
+            root.event_generate("<<ProcessFinished>>", when="tail")
+
 
     inputPaths = foreplay(root, ejecutar, barrasBusqueda)
 
-    try:
-        # Run function in a separate thread to avoid freezing GUI
-        # loading_bar.start()
-        loading_bar.pack()
-        threading.Thread(target=sex_threader).start()
-
-    except Exception as e:
-        # Handle exceptions here
-        inputErrorWindow(root, e)
-        loading_bar.pack_forget()
-        ejecutar.enable()
-        return
+    # Run function in a separate thread to avoid freezing GUI
+    # loading_bar.start()
+    loading_bar['value'] = 0
+    loading_bar.pack()
+    threading.Thread(target=sex_threader).start()
 
     def on_sex_finnished(event):
+        if sex_result["Exception"] != False:
+            e = sex_result["Exception"]
+            inputErrorWindow(root, e)
+            loading_bar.pack_forget()
+            ejecutar.enable()
+            return
+
         errores = sex_result["errores"]
         revisar = sex_result["revisar"]
         aftercare(

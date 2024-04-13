@@ -307,11 +307,30 @@ def simplifier(pseudocontrol: pd.DataFrame) -> pd.DataFrame:
         "FLETE TOTAL 2",
     ]
     for columna in columnas_por_sumar:
-        columna_sumada = columna + " SUMADAS"
-        pseudocontrol[columna_sumada] = pseudocontrol[columna].apply(sumador_de_tuplas)
-        column_sumadas_column = pseudocontrol.pop(columna_sumada)
-        column_index = pseudocontrol.columns.get_loc(columna)
-        pseudocontrol.insert(column_index + 1, columna_sumada, column_sumadas_column)
+        pseudocontrol[columna] = pseudocontrol[columna].apply(sumador_de_tuplas)
+
+    columnas_por_caja = [
+        "FACT PROFORMA $/CAJA",
+        "PRECIO CONTRATO $/CAJA",
+        "BRUTOS_2/CJ",
+        "FLETE TOTAL/CJ",
+        "GASTOS LOCALES CLP/CJ",
+        "GASTOS LOCALES USD/CJ",
+        "FLETE TOTAL 2/CJ",
+    ]
+
+    columnas_globales = [
+        "FACT PROFORMA $ TOTAL",
+        "PRECIO CONTRATO",
+        "BRUTOS_2",
+        "FLETE TOTAL",
+        "GASTOS LOCALES CLP",
+        "GASTOS LOCALES USD",
+        "FLETE TOTAL 2",
+    ]
+
+    for column_cj, column_gl in zip(columnas_por_caja, columnas_globales):
+        pseudocontrol[column_cj] = pseudocontrol[column_gl] / pseudocontrol["CAJAS"]
 
     return pseudocontrol
 
@@ -565,7 +584,6 @@ def pseudoControl(
         "KG NET/CAJA",
         "BRUTOS/CAJA",
         "CAJAS",
-        "CAJAS SUMADAS",
         "PALLETS",
         "NETOS",
         "BRUTOS",
@@ -596,27 +614,20 @@ def pseudoControl(
         "FECHA VENC IVV",  # Empty
         "FACT PROFORMA $/CAJA",
         "FACT PROFORMA $ TOTAL",
-        "FACT PROFORMA $ TOTAL SUMADAS",
         "FACT EXPORTACION $/CAJA",
         "FACT EXPORTACION $ TOTAL",
         "PRECIO CONTRATO $/CAJA",
         "PRECIO CONTRATO",
-        "PRECIO CONTRATO SUMADAS",
         "FLETE/kg",
         "BRUTOS_2",
-        "BRUTOS_2 SUMADAS",
         "BRUTOS_2/CJ",
         "FLETE TOTAL",
-        "FLETE TOTAL SUMADAS",
         "FLETE TOTAL/CJ",
         "GASTOS LOCALES CLP",
-        "GASTOS LOCALES CLP SUMADAS",
         "GASTOS LOCALES CLP/CJ",
         "GASTOS LOCALES USD",
-        "GASTOS LOCALES USD SUMADAS",
         "GASTOS LOCALES USD/CJ",
         "FLETE TOTAL 2",
-        "FLETE TOTAL 2 SUMADAS",
         "FLETE TOTAL 2/CJ",
         "COSTO SECO/KG",
     ]
