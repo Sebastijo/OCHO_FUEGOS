@@ -31,7 +31,7 @@ import pandas as pd
 import numpy as np
 import sympy as sp
 from typing import Union
-import tabula
+# import tabula
 import os
 import re
 
@@ -88,6 +88,7 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     paginas_list = (
         []
     )  # Lista cuya n-ésima entrada contiene la primera página del n-ésimo embarque
+    """
     if liquidacion.endswith(".pdf"):
         embarqueNum = 0  # Índice del embarque en la lista de embarques
         i = 0  # Índice de página (pagina - 1)
@@ -95,10 +96,10 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
         while pages_left:  # Recorremos hasta que no queden hojas
             embarque_change = False  # "El embarque cambió respecto al ciclo anterior"
             while not embarque_change:  # Mientras nos mantengamos en el mismo embarque
-                """
-                Las páginas del PDF contienen distintos embarques, cada embarque puede estar contenido en varias págnas las cuales están una tras la otra.
-                Este while se encarga de identificar los diferentes embarques y poner todas las tablas de un mismo embarque en una misma msima lista metida en la lista embarques.
-                """
+                
+                # Las páginas del PDF contienen distintos embarques, cada embarque puede estar contenido en varias págnas las cuales están una tras la otra.
+                # Este while se encarga de identificar los diferentes embarques y poner todas las tablas de un mismo embarque en una misma msima lista metida en la lista embarques.
+                
                 page = i + 1  # Definimos la página actual a partir del índice
 
                 try:
@@ -142,110 +143,110 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
                     embarqueNum += 1
                     embarque_change = True
                 i += 1  # Pasamos a la siguiente pagina
+    """
+    # else:  # Si el archivo es un excel
+    embarque = pd.read_excel(liquidacion, dtype=str)
+    embarque = embarque.dropna(axis=1, how="all")
 
-    else:  # Si el archivo es un excel
-        embarque = pd.read_excel(liquidacion, dtype=str)
-        embarque = embarque.dropna(axis=1, how="all")
+    main_location = embarque[embarque.iloc[:, 0] == "日期"].index[0]
+    embarque = embarque.iloc[main_location:].reset_index(drop=True)
 
-        main_location = embarque[embarque.iloc[:, 0] == "日期"].index[0]
-        embarque = embarque.iloc[main_location:].reset_index(drop=True)
+    concatenated_string = embarque.iloc[0] + " " + embarque.iloc[1]
+    embarque.columns = concatenated_string
+    embarque = embarque.iloc[2:]
+    embarque.reset_index(drop=True, inplace=True)
 
-        concatenated_string = embarque.iloc[0] + " " + embarque.iloc[1]
-        embarque.columns = concatenated_string
-        embarque = embarque.iloc[2:]
-        embarque.reset_index(drop=True, inplace=True)
+    embarque.columns = [
+        str(col) if not isinstance(col, float) else "nan"
+        for col in embarque.columns
+    ]
 
-        embarque.columns = [
-            str(col) if not isinstance(col, float) else "nan"
-            for col in embarque.columns
-        ]
+    embarque.columns = [
+        column.replace(" " + " ", " ")
+        .replace("(", " (")
+        .replace("FOB FOB", " FOB FOB")
+        for column in list(embarque.columns)
+    ]
 
-        embarque.columns = [
-            column.replace(" " + " ", " ")
-            .replace("(", " (")
-            .replace("FOB FOB", " FOB FOB")
-            for column in list(embarque.columns)
-        ]
+    assert (
+        "品种 Variety" in embarque.columns
+    ), f"La columna '品种 Variety' no se encuentra la liquidacion de {liquidacion}"
+    column_with_total = embarque["品种 Variety"].copy().dropna()
+    summarry_location = column_with_total[
+        column_with_total.str.contains("total", case=False)
+    ]
+    assert (
+        len(summarry_location) == 1
+    ), f"No se encontró el resumen en la liquidación {liquidacion}."
+    summarry_location = summarry_location.index[0]
 
-        assert (
-            "品种 Variety" in embarque.columns
-        ), f"La columna '品种 Variety' no se encuentra la liquidacion de {liquidacion}"
-        column_with_total = embarque["品种 Variety"].copy().dropna()
-        summarry_location = column_with_total[
-            column_with_total.str.contains("total", case=False)
-        ]
-        assert (
-            len(summarry_location) == 1
-        ), f"No se encontró el resumen en la liquidación {liquidacion}."
-        summarry_location = summarry_location.index[0]
+    cost_location = embarque[
+        embarque.iloc[:, 0] == "其他费用 Additional Fees"
+    ].index[0]
 
-        cost_location = embarque[
-            embarque.iloc[:, 0] == "其他费用 Additional Fees"
-        ].index[0]
+    main = embarque.iloc[: summarry_location + 1].copy().reset_index(drop=True)
+    not_main = embarque.iloc[cost_location:].copy().reset_index(drop=True)
 
-        main = embarque.iloc[: summarry_location + 1].copy().reset_index(drop=True)
-        not_main = embarque.iloc[cost_location:].copy().reset_index(drop=True)
+    if "总数 (美金) Total" in main.columns:
+        main = main.rename(columns={"总数 (美金) Total": "总数 (美金) Total USD"})
 
-        if "总数 (美金) Total" in main.columns:
-            main = main.rename(columns={"总数 (美金) Total": "总数 (美金) Total USD"})
+    wanted_columns = [
+        "日期 Date",
+        "板号 Pallet No.",
+        "果园 CSG",
+        "品种 Variety",
+        "大小 Size",
+        "数量 Quantity",
+        "规格 Specification",
+        "价格 (人民币) Price RMB",
+        "总数 (人民币) Total RMB",
+        "总数 (美金) Total USD",
+        "每箱收益  FOB FOB Return",
+        "总收益 FOB Total Return",
+    ]
 
-        wanted_columns = [
-            "日期 Date",
-            "板号 Pallet No.",
-            "果园 CSG",
-            "品种 Variety",
-            "大小 Size",
-            "数量 Quantity",
-            "规格 Specification",
-            "价格 (人民币) Price RMB",
-            "总数 (人民币) Total RMB",
-            "总数 (美金) Total USD",
-            "每箱收益  FOB FOB Return",
-            "总收益 FOB Total Return",
-        ]
+    missing_columns = (
+        set(wanted_columns)
+        - set(main.columns)
+        - {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}
+    )
+    assert (
+        missing_columns == set()
+    ), f"Las columnas de la tabla principal del archivo {liquidacion} no son las correctas. Deben ser {wanted_columns} pero faltan {missing_columns}."
 
-        missing_columns = (
-            set(wanted_columns)
-            - set(main.columns)
-            - {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}
-        )
-        assert (
-            missing_columns == set()
-        ), f"Las columnas de la tabla principal del archivo {liquidacion} no son las correctas. Deben ser {wanted_columns} pero faltan {missing_columns}."
+    if not {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}.issubset(
+        set(main.columns)
+    ):
+        main["每箱收益  FOB FOB Return"] = 0
+        main["总收益 FOB Total Return"] = 0
 
-        if not {"每箱收益  FOB FOB Return", "总收益 FOB Total Return"}.issubset(
-            set(main.columns)
-        ):
-            main["每箱收益  FOB FOB Return"] = 0
-            main["总收益 FOB Total Return"] = 0
+    main = main[wanted_columns]
 
-        main = main[wanted_columns]
+    main.at[main.index[-1], "品种 Variety"] = np.nan
 
-        main.at[main.index[-1], "品种 Variety"] = np.nan
+    not_main = not_main.dropna(axis=1, how="all")
 
-        not_main = not_main.dropna(axis=1, how="all")
+    not_main.columns = not_main.iloc[0]
+    not_main = not_main.iloc[1:]
 
-        not_main.columns = not_main.iloc[0]
-        not_main = not_main.iloc[1:]
+    cost_column_dict = {
+        "其他费用 Additional Fees": "其他费用 Additional Fees",
+        "人民币 RMB": "人民币 RMB",
+        "美元 USD": "美金 USD",
+    }
+    not_main = not_main.rename(columns=cost_column_dict)
+    cost = not_main.copy()[cost_column_dict.values()].dropna(how="all")
+    note = not_main.drop(columns=cost_column_dict.values()).dropna(how="all")
 
-        cost_column_dict = {
-            "其他费用 Additional Fees": "其他费用 Additional Fees",
-            "人民币 RMB": "人民币 RMB",
-            "美元 USD": "美金 USD",
-        }
-        not_main = not_main.rename(columns=cost_column_dict)
-        cost = not_main.copy()[cost_column_dict.values()].dropna(how="all")
-        note = not_main.drop(columns=cost_column_dict.values()).dropna(how="all")
+    cost["其他费用 Additional Fees"] = cost["其他费用 Additional Fees"].str.replace(
+        "）", ")"
+    )
 
-        cost["其他费用 Additional Fees"] = cost["其他费用 Additional Fees"].str.replace(
-            "）", ")"
-        )
-
-        embarque = [main, cost, note]
-        for idx in range(len(embarque)):
-            embarque[idx] = embarque[idx].reset_index(drop=True)
-        embarques.append(embarque)
-        paginas_list.append(1)
+    embarque = [main, cost, note]
+    for idx in range(len(embarque)):
+        embarque[idx] = embarque[idx].reset_index(drop=True)
+    embarques.append(embarque)
+    paginas_list.append(1)
 
     return embarques, paginas_list
 
