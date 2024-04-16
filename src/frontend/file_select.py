@@ -14,7 +14,6 @@ Librerías:
 from typing import Union
 import tkinter as tk
 from tkinterdnd2 import *
-from tkinter import filedialog
 
 # modulos propios
 if __name__ == "__main__":
@@ -44,13 +43,13 @@ class BarraBusqueda:
         self.content = content
 
         # Crear el frame principal que contendrá todo el widget
-        self.frame = tk.Frame(contenedor, bd=4, bg=background)
+        self.frame = tk.Frame(contenedor, bd=5, bg=background)
 
         # BARRA DE TEXTO:
         self.draggerFrame = tk.Frame(
             self.frame, bd=6, relief=tk.GROOVE, bg=background
         )  # Frame que contiene el widget de texto. Solo para motivos estéticos
-        self.draggerFrame.grid(row=0, column=0)  # Ubicación del frame
+        self.draggerFrame.grid(row=0, column=0, sticky="ew")  # Ubicación del frame
 
         # Crear el widget de texto para mensajes y drag-and-drop
         self.dragger = tk.Text(
@@ -81,7 +80,7 @@ class BarraBusqueda:
             "<<Drop>>", get_path
         )  # Asociar la función get_path al evento de soltar (Drop)
 
-        self.dragger.pack()
+        self.dragger.pack(fill=tk.BOTH, expand=True)
 
         # BOTÓN DE EXAMINAR:
         self.button = tk.Button(
@@ -99,9 +98,9 @@ class BarraBusqueda:
 
         self.button.grid(row=0, column=1)
 
-    def pack(self):
+    def pack(self, *args, **kwargs):
         """Método para empaquetar el widget en el contenedor."""
-        self.frame.pack()
+        self.frame.pack(*args, **kwargs)
 
     def grid(self, *args, **kwargs):
         """Método para empaquetar el widget en el contenedor."""
@@ -127,7 +126,7 @@ class BarraBusqueda:
 # Función que se llama cuando se realiza un evento de arrastrar y soltar (drag and drop)
 def get_path(event):
     text = event.data
-    text = text.strip('{}')
+    text = text.strip("{}")
     event.widget.delete(1.0, tk.END)
     event.widget.insert(tk.END, text)
 
@@ -159,6 +158,7 @@ def browsefunc(text: tk.Widget) -> None:
     filename = tk.filedialog.askopenfilename(filetypes=file_types)
     text.delete("1.0", tk.END)
     text.insert(tk.END, filename)
+
 
 # Probamos la clase BarraBusqueda
 if __name__ == "__main__":

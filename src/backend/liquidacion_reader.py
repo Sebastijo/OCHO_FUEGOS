@@ -23,12 +23,12 @@ if __name__ == "__main__":
     from src.config import variables as var
     from src.backend.embarque_liquidacion_class import embarqueL
     from src.backend.liquidacion_revisar import revisar_liquidacion
-    from src.backend.liquidacion_interpreter import interpreter
+    from src.backend.interpreters.liquidacion_interpreter import interpreter
 else:
     from ..config import variables as var
     from .embarque_liquidacion_class import embarqueL
     from .liquidacion_revisar import revisar_liquidacion
-    from .liquidacion_interpreter import interpreter
+    from .interpreters.liquidacion_interpreter import interpreter
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq

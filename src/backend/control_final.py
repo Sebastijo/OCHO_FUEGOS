@@ -13,6 +13,8 @@ import pandas as pd
 import numpy as np
 import os
 import pickle as pkl
+import threading
+import traceback
 
 # Importamos modulos propios
 if __name__ == "__main__":
@@ -206,6 +208,114 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
     return simplified
 
 
+def import_and_check(
+    embarques_path: str,
+    facturas_path: str,
+    tarifa_path: str,
+    liquidaciones_path: str,
+    update_loading_bar: callable = False,
+) -> tuple[pd.DataFrame, list, dict, dict]:
+    """
+    Recibe los paths de los archivos de embarques (.xlsx), facturas (.xlsx), tarifa (.xlsx) y liquidaciones (folder)
+    devuelve una tupla conteniendo:
+
+    0) Un dataframe con el control final
+    1) Una lista con las liquidaciones
+    2) Un diccionario con los errores de liquidación
+    3) Un diccionario con los elementos que necesitan ser revisados
+
+    Genera las liquidaciones y el pseudocontrol en threads separados.
+
+    """
+    # Revisamos que el input sean archivos y que estos existan
+    for input in [embarques_path, facturas_path, tarifa_path, liquidaciones_path]:
+        assert (
+            type(input) == str
+        ), f"La ruta del archivo '{input}' no es una cadena de texto."
+        assert os.path.exists(input), f"La ruta del archivo '{input}' no existe."
+        if input == liquidaciones_path:
+            assert (
+                os.path.isdir(input)
+                or input.lower().endswith(".pdf")
+                or input.lower().endswith(".xlsx")
+                or input.lower().endswith(".xls")
+            ), f"'{input}' no es una carpeta ni un archivo de PDF ni un archivo Excel."
+        else:
+            assert os.path.isfile(
+                input
+            ), f"'{input}' no es una archivo; puede que sea una carpeta."
+            assert input.lower().endswith(
+                (".xlsx", ".xls")
+            ), f"El archivo '{input}' no es un archivo de Excel."
+
+    if update_loading_bar:  # 1ra operacion
+        update_loading_bar()
+
+    exceptions_list = []
+    pseudo_control_list = []
+
+    # Creamos el pseudocontrol
+    def pseudo_control_threader():
+        try:
+            pseudo_control = pseudoControl(
+                embarques_path,
+                facturas_path,
+                tarifa_path,
+                update_loading_bar,
+            )
+            pseudo_control_list.append(pseudo_control)
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            print(e)
+            exceptions_list.append(e)
+
+        if update_loading_bar:  # 5ta operacion
+            update_loading_bar()
+
+    liquidacion_list = []
+
+    # Creamos la liquidaciones
+    def liquidacion_threader():
+        try:
+            liquidacion, errores, revisar = liquidaciones(
+                liquidaciones_path, update_loading_bar
+            )
+
+            liquidacion_list.append(liquidacion)
+            liquidacion_list.append(errores)
+            liquidacion_list.append(revisar)
+
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            print(e)
+            exceptions_list.append(e)
+
+        if update_loading_bar:  # 6ta operacion
+            update_loading_bar()
+
+    # Definimos los threads
+    pseudo_control_thread = threading.Thread(target=pseudo_control_threader)
+    liquidacion_thread = threading.Thread(target=liquidacion_threader)
+
+    # Iniciamos los threads
+    pseudo_control_thread.start()
+    liquidacion_thread.start()
+
+    # Esperamos a que los threads terminen
+    pseudo_control_thread.join()
+    liquidacion_thread.join()
+
+    if len(exceptions_list) > 0:
+        raise sum(exceptions_list)
+
+    pseudo_control = pseudo_control_list[0]
+    liquidacion = liquidacion_list[0]
+    errores = liquidacion_list[1]
+    revisar = liquidacion_list[2]
+
+    return pseudo_control, liquidacion, errores, revisar
+
+
 def control(
     embarques_path: str,
     facturas_path: str,
@@ -275,48 +385,13 @@ def control(
                 pkl.dump(revisar, file)
 
     else:
-        # Revisamos que el input sean archivos y que estos existan
-        for input in [embarques_path, facturas_path, tarifa_path, liquidaciones_path]:
-            assert (
-                type(input) == str
-            ), f"La ruta del archivo '{input}' no es una cadena de texto."
-            assert os.path.exists(input), f"La ruta del archivo '{input}' no existe."
-            if input == liquidaciones_path:
-                assert (
-                    os.path.isdir(input)
-                    or input.lower().endswith(".pdf")
-                    or input.lower().endswith(".xlsx")
-                    or input.lower().endswith(".xls")
-                ), f"'{input}' no es una carpeta ni un archivo de PDF ni un archivo Excel."
-            else:
-                assert os.path.isfile(
-                    input
-                ), f"'{input}' no es una archivo; puede que sea una carpeta."
-                assert input.lower().endswith(
-                    (".xlsx", ".xls")
-                ), f"El archivo '{input}' no es un archivo de Excel."
-
-        if update_loading_bar:  # 1ra operacion
-            update_loading_bar()
-
-        # Creamos el pseudocontrol
-        pseudo_control = pseudoControl(
+        pseudo_control, liquidacion, errores, revisar = import_and_check(
             embarques_path,
             facturas_path,
             tarifa_path,
+            liquidaciones_path,
             update_loading_bar,
         )
-
-        if update_loading_bar:  # 5ta operacion
-            update_loading_bar()
-
-        # Creamos la liquidaciones
-        liquidacion, errores, revisar = liquidaciones(
-            liquidaciones_path, update_loading_bar
-        )
-
-        if update_loading_bar:  # 6ta operacion
-            update_loading_bar()
 
     # Separamos las liquidaciones con y sin CSG
     liq_con_CSG = []
@@ -329,7 +404,7 @@ def control(
             liq_sin_CSG.append(embarques.main)
 
     if update_loading_bar:  # 7ta operacion
-            update_loading_bar()
+        update_loading_bar()
 
     # Si no hay liquidaciones, entonces el control final es el pseudo control con las columnas de liquidación vacías.
     if len(liq_sin_CSG) + len(liq_con_CSG) == 0:
@@ -480,7 +555,7 @@ def control(
                 ),
                 axis=1,
             )
-        
+
         if update_loading_bar:  # 10ma operacion
             update_loading_bar()
 
@@ -534,7 +609,7 @@ def control(
 
     if update_loading_bar:
         update_loading_bar()
-        
+
     return (
         control_df,
         errores,

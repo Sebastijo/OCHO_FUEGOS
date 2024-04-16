@@ -18,6 +18,7 @@ from tkinterdnd2 import *
 import pandas as pd
 import os
 import threading
+import traceback
 
 # modulos propios
 if __name__ == "__main__":
@@ -73,7 +74,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     mainFrame = ventana.mainFrame
 
     frameBusquedas = tk.Frame(mainFrame, bd=4, relief=tk.FLAT, bg=bg["window"])
-    frameBusquedas.grid(row=0, column=0)
+    frameBusquedas.grid(row=0, column=0, sticky="ew")
 
     # Creación de los widgets de búsqueda de archivos
     contents = {
@@ -87,7 +88,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         barrasBusqueda[tipo] = BarraBusqueda(frameBusquedas, contents[tipo])
         # Creamos la barra de busqueda con el contenido descrito
         barrasBusqueda[tipo].grid(
-            row=idx, column=0
+            row=idx, column=0, sticky="ew"
         )  # Montamos la barra de busqueda en el frame
 
     # Creación de los botones finales de output y de exit.
@@ -136,7 +137,13 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
-        mainFrame, bg=bg["window"], width=500, height=70, bd=5, relief=tk.SUNKEN, padx=10
+        mainFrame,
+        bg=bg["window"],
+        width=500,
+        height=70,
+        bd=5,
+        relief=tk.SUNKEN,
+        padx=10,
     )
     output = []
     for i in range(2):
@@ -156,16 +163,18 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     # Create and configure the progress bar
     style = ttk.Style()
     style.configure("TProgressbar", thickness=20)
+    loading_bar_frame = tk.Frame(frameFinalButtonsAndBar, bg=bg["window"])
     loading_bar = ttk.Progressbar(
-        frameFinalButtonsAndBar, mode="determinate", style="TProgressbar", length=450
+        loading_bar_frame, mode="determinate", style="TProgressbar"
     )
 
     # Cargamos los botones a la ventana
-    frameFinalButtonsAndBar.grid(row=1, column=0, sticky=tk.EW)
+    frameFinalButtonsAndBar.grid(row=1, column=0, sticky="ew")
     frameFinalButtons.pack(side=tk.RIGHT, anchor="n")
+    loading_bar.pack(expand=True, fill=tk.X)
 
-    loading_bar.pack(side=tk.LEFT, padx=10, pady=0)
-    loading_bar.pack_forget()
+    loading_bar_frame.pack()
+    loading_bar_frame.pack_forget()
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
@@ -199,6 +208,8 @@ def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
                 pass
 
     except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        print(e)
         error_message = f"""El archivo de Excel en la ubicación {control_path} está abierto,
                         con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
                         El error interno es: {e}"""
@@ -291,9 +302,9 @@ def aftercare(
         )
         output[-1].pack(padx=10, pady=(10, 10))
         output[-1].configure(command=lambda: revisarWindow(root, errores, revisar))
-    outputFrame.grid(row=1, column=0, sticky=tk.EW)  # Mostramos el frame de los outputs
+    outputFrame.grid(row=1, column=0, sticky="ew")  # Mostramos el frame de los outputs
     frameFinalButtonsAndBar.grid(
-        row=2, column=0, sticky=tk.EW
+        row=2, column=0, sticky="ew"
     )  # Mostramos los botones finales
 
     return
@@ -373,23 +384,26 @@ def runVentas(
             # Updating GUI after process finishes
             root.event_generate("<<ProcessFinished>>", when="tail")
         except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            print(e)
             sex_result["Exception"] = e
             root.event_generate("<<ProcessFinished>>", when="tail")
-
 
     inputPaths = foreplay(root, ejecutar, barrasBusqueda)
 
     # Run function in a separate thread to avoid freezing GUI
     # loading_bar.start()
-    loading_bar['value'] = 0
-    loading_bar.pack(expand=True, fill=tk.X)
+    loading_bar["value"] = 0
+    loading_bar_frame_name = loading_bar.winfo_parent()
+    loading_bar_frame = root.nametowidget(loading_bar_frame_name)
+    loading_bar_frame.pack(side=tk.LEFT, padx=5, pady=0, fill=tk.BOTH, expand=True)
     threading.Thread(target=sex_threader).start()
 
     def on_sex_finnished(event):
         if sex_result["Exception"] != False:
             e = sex_result["Exception"]
             inputErrorWindow(root, e)
-            loading_bar.pack_forget()
+            loading_bar_frame.pack_forget()
             ejecutar.enable()
             return
 
@@ -404,7 +418,7 @@ def runVentas(
             revisar,
         )
         # loading_bar.stop()
-        loading_bar.pack_forget()
+        loading_bar_frame.pack_forget()
         ejecutar.enable()
 
     # Bind event for process finished
