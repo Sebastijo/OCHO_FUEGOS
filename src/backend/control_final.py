@@ -108,6 +108,7 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
                 "RETORNO FOB",
                 "COSTO",
                 "COMISION",
+                "VAT",
                 "COSTO Y COMISION",
                 "LIQ FINAL",
             }
@@ -153,6 +154,7 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
         "RETORNO FOB",
         "COSTO",
         "COMISION",
+        "VAT",
         "COSTO Y COMISION",
         "LIQ FINAL",
     ]
@@ -167,12 +169,14 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
         "RETORNO FOB/CJ",
         "COSTO/CJ",
         "COMISION/CJ",
+        "VAT/CJ",
     ]
     columnas_globales = [
         "TOTAL RMB",
         "RETORNO FOB",
         "COSTO",
         "COMISION",
+        "VAT",
     ]
 
     for columna_cj, columna_gl in zip(columnas_por_caja, columnas_globales):
@@ -181,11 +185,13 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
     columnas_por_kg = [
         "COSTO/KG",
         "COMISION/KG",
+        "VAT/KG"
     ]
 
     columnas_globales = [
         "COSTO",
         "COMISION",
+        "VAT",
     ]
 
     cajas_liquidadas = simplified["CAJAS LIQUIDADAS"].copy()
@@ -297,6 +303,10 @@ def import_and_check(
     pseudo_control_thread = threading.Thread(target=pseudo_control_threader)
     liquidacion_thread = threading.Thread(target=liquidacion_threader)
 
+    # Establecemos los hilos como Daemon
+    pseudo_control_thread.setDaemon(True)
+    liquidacion_thread.setDaemon(True)
+
     # Iniciamos los threads
     pseudo_control_thread.start()
     liquidacion_thread.start()
@@ -306,7 +316,7 @@ def import_and_check(
     liquidacion_thread.join()
 
     if len(exceptions_list) > 0:
-        raise sum(exceptions_list)
+        raise exceptions_list[0]
 
     pseudo_control = pseudo_control_list[0]
     liquidacion = liquidacion_list[0]
@@ -428,6 +438,9 @@ def control(
             "COMISION",
             "COMISION/CJ",
             "COMISION/KG",
+            "VAT",
+            "VAT/CJ",
+            "VAT/KG",
             "COSTO Y COMISION",
             "LIQ FINAL",
         ]:
@@ -568,9 +581,10 @@ def control(
     # Cambiamos el formato de las fechas
     def convert_to_date(value):
         try:
-            return pd.to_datetime(value).strftime("%Y-%m-%d")
+            value = pd.to_datetime(value).strftime("%Y-%m-%d")
         except ValueError:
-            return value
+            pass
+        return value
 
     date_columns = [
         "FECHA FACTURA",

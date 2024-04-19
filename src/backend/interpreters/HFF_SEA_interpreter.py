@@ -135,6 +135,10 @@ def interpreter_HFF_SEA(liquidacion: str) -> pd.DataFrame:
     cost["单价"] = np.nan
     cost = cost.iloc[:-1]
 
+    assert any(
+        "add-value duty" in str(value).lower() for value in cost["销售数量"].values
+    ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'Add-Value Duty' en la columna '销售数量'."
+
     liquidacion_df = pd.concat([main, cost])
     liquidacion_df.iloc[0] = liquidacion_df.columns
 

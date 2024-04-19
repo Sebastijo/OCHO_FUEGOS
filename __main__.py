@@ -41,6 +41,7 @@ if not all([os.path.exists(path) for path in config_paths]):
     from src.config.config_maker import make_config
 
     make_config()
+    print("Información de Datos del programa>Variables actualizada.")
 
 # Creamos la carpeta de output en el dispositivo del usuario, de no existir.
 if not os.path.exists(output_folder):

@@ -23,12 +23,12 @@ if __name__ == "__main__":
     from src.config import variables as var
     from src.backend.embarque_liquidacion_class import embarqueL
     from src.backend.liquidacion_revisar import revisar_liquidacion
-    from src.backend.interpreters.liquidacion_interpreter import interpreter
+    from src.backend.liquidacion_interpreter import interpreter
 else:
     from ..config import variables as var
     from .embarque_liquidacion_class import embarqueL
     from .liquidacion_revisar import revisar_liquidacion
-    from .interpreters.liquidacion_interpreter import interpreter
+    from .liquidacion_interpreter import interpreter
 
 # Importamos variables globales
 main_dict_liq = var.main_dict_liq
@@ -451,7 +451,21 @@ def feature_engine(embarque: embarqueL) -> None:
         embarque.main["COMISION/CJ"] / embarque.main["KG NET/CAJA"]
     )
 
-    # Establecemos los KG NET/CAJA como strings en un formato compatible con base embarues
+    # Agregamos la columna de VAT
+    kg_totales = (
+        embarque.main["CAJAS LIQUIDADAS"] * embarque.main["KG NET/CAJA"]
+    ).sum()
+    embarque.main["VAT"] = (embarque.VAT / kg_totales) * (
+        embarque.main["CAJAS LIQUIDADAS"] * embarque.main["KG NET/CAJA"]
+    )
+    embarque.main["VAT/CJ"] = embarque.main["VAT"] / embarque.main["CAJAS LIQUIDADAS"]
+    embarque.main["VAT/KG"] = embarque.main["VAT"] / (
+        embarque.main["CAJAS LIQUIDADAS"] * embarque.main["KG NET/CAJA"]
+    )
+    VAT_error = abs(embarque.VAT - embarque.main["VAT"].sum())
+    assert  VAT_error < 10**-2, f"El VAT no coincide con la suma de los VAT: error de {VAT_error}"
+
+    # Establecemos los KG NET/CAJA como strings en un formato compatible con base embarques
     embarque.main["KG NET/CAJA"] = (
         embarque.main["KG NET/CAJA"]
         .astype(float)
@@ -589,9 +603,9 @@ def liquidaciones(
 
         # Agregamos el embarque a la lista de embarques_
         embarques_.append(embarque)
-    
+
     if update_loading_bar:
-                update_loading_bar()
+        update_loading_bar()
 
     return embarques_, errores, revisar
 

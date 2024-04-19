@@ -299,6 +299,10 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
     )
     cost = pd.concat([cost, total_charges]).reset_index(drop=True)
 
+    assert any(
+        "vat" in str(value).lower() for value in cost["其他费用 Additional Fees"].values
+    ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'VAT' en la columna '其他费用 Additional Fees'."
+
     liquidacion_list = [[main, cost, note]]
 
     return liquidacion_list, [1]

@@ -42,12 +42,12 @@ if __name__ == "__main__":
     from src.backend.interpreters.BQ_interpreter import interpreter_BQ
     from src.backend.interpreters.standard_interpreter import interpreter_standard
 else:
-    from ...config import variables as var
-    from .HT_interpreter import interpreter_12Islands
-    from .HFF_interpreter import interpreter_HFF
-    from .HFF_SEA_interpreter import interpreter_HFF_SEA
-    from .BQ_interpreter import interpreter_BQ
-    from .standard_interpreter import interpreter_standard
+    from ..config import variables as var
+    from .interpreters.HT_interpreter import interpreter_12Islands
+    from .interpreters.HFF_interpreter import interpreter_HFF
+    from .interpreters.HFF_SEA_interpreter import interpreter_HFF_SEA
+    from .interpreters.BQ_interpreter import interpreter_BQ
+    from .interpreters.standard_interpreter import interpreter_standard
 
 # Definimos variables globales
 main_dict_liq_standard = var.main_dict_liq_standard
@@ -56,8 +56,8 @@ main_list_liq_HFF = var.main_list_liq_HFF
 main_list_liq_HFF_SEA = var.main_list_liq_HFF_SEA
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HFF_Liquidation-8F_Air-AWB_157-84730612.xlsx"
-    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-045-91458345-X.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-157-84730601-X.xlsx"
+    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-369-88368825-X.xlsx"
 
 
 def interpreter(liquidacion: str) -> tuple[list, list]:

@@ -1,6 +1,7 @@
 """
 El objetivo de este arhivo es mantener todas las variables globales del programa.
 """
+
 import os
 import sys
 
@@ -37,7 +38,7 @@ font = {"?": 8, "output_button": 40, "exit_button": 40}
 
 # Diccionario para ventas:
 embarquesDict = {  # Traducción de embarques
-    "PackingWeek": "ETD WEEK",
+    "DepartureWeek": "ETD WEEK",
     "ExporterName": "EXPORTADOR",
     "DispatchInstructiveCode": "INSTRUCTIVO",
     "ReceiverName": "CLIENTE",

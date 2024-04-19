@@ -136,6 +136,13 @@ def interpreter_BQ(liquidacion: str) -> pd.DataFrame:
     assert any(
         "commission" in str(value).lower() for value in cost["尺寸"].values
     ), "No se pudo encontrar la fila de comisión: no se encontró la fila que contenga 'Commission' en la columna '尺寸'."
+    assert any(
+        "add-value duty" in str(value).lower() for value in cost["尺寸"].values
+    ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'Add-Value Duty' en la columna '尺寸'."
+    VAT_location = cost[
+        cost["尺寸"].str.contains("add-value duty", case=False, na=False)
+    ].index[0]
+    cost.at[VAT_location, "尺寸"] = "VAT"
     cost["CSG"] = cost["尺寸"]
     cost["尺寸"] = np.nan
     cost["日期"] = cost["重量"]

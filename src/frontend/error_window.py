@@ -65,7 +65,6 @@ def inputErrorWindow(window: tk.Tk, e: Exception):
     label_error.pack(padx=10, pady=(0, 30))
 
     okButton = Boton(mainFrame_error, "OK", ventana_error.destroy, "output_button")
-    okButton.configure(width=10)
     okButton.pack(pady=10)
 
 
@@ -122,7 +121,6 @@ def revisarWindow(
     scrollbar.config(command=text_widget.yview)
 
     okButton = Boton(mainFrame_revisar, "OK", ventana_revisar.destroy, "output_button")
-    okButton.configure(width=10)
     okButton.pack(pady=10)
 
 

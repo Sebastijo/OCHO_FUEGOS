@@ -28,14 +28,28 @@ class embarqueL:
         self.location = location
         self.commission = 0.0
         self.commission_value = 0.0
+        self.VAT = 0.0
+
+        se_encontro_comision = False
+        se_encontro_VAT = False
         for idx in self.cost.index:
-            match = re.search(r"\(([\d.]+)%\)", idx)
-            if match:
-                self.commission = float(match.group(1)) / 100
+            commission_match = re.search(r"\(([\d.]+)%\)", idx)
+            if commission_match:
+                se_encontro_comision = True
+                self.commission = float(commission_match.group(1)) / 100
                 self.commission_value = float(
                     str(self.cost.at[idx, "USD"]).replace("$", "")
                 )
+            if "vat" in idx.lower():
+                se_encontro_VAT = True
+                self.VAT = float(str(self.cost.at[idx, "USD"]).replace("$", ""))
+            if se_encontro_comision and se_encontro_VAT:
                 break
+            
+        assert se_encontro_VAT, "No se encontró el VAT en el DataFrame de costos"
+        assert (
+            se_encontro_comision
+        ), "No se encontró la comisión en el DataFrame de costos"
 
         self.CSG = None
 

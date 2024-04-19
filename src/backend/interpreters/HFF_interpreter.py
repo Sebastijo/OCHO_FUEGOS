@@ -92,6 +92,15 @@ def interpreter_HFF(liquidacion: Union[str, pd.DataFrame]) -> pd.DataFrame:
     cost = liquidacion_df.iloc[summary_location + 1 :].copy()
     main = liquidacion_df.iloc[: summary_location + 1].copy()
 
+    # Remplazamos el nombre de VAT
+    assert any(
+        "add-value duty" in str(value).lower() for value in cost["销售数量"].values
+    ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'Add-Value Duty' en la columna '销售数量'."
+    VAT_location = cost[
+        cost["销售数量"].str.contains("add-value duty", case=False, na=False)
+    ].index[0]
+    cost.at[VAT_location, "销售数量"] = "VAT"
+
     # Remplazamos la columna boxes por CSG (np.nan)
     assert "CSG" not in main.columns, "La columna 'CSG' ya existe en el archivo."
     main.rename(columns={"到货数量": "CSG"}, inplace=True)

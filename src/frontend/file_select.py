@@ -8,12 +8,14 @@ Lenguaje: Python 3.11.7
 Librerías:
 - tkinter: 8.6.12
 - tkinterdnd2: 0.2.1
+- tkmacosx: 1.0.5
 """
 
 # Importamos paquetes
 from typing import Union
 import tkinter as tk
 from tkinterdnd2 import *
+from tkmacosx import Button
 
 # modulos propios
 if __name__ == "__main__":
@@ -83,15 +85,17 @@ class BarraBusqueda:
         self.dragger.pack(fill=tk.BOTH, expand=True)
 
         # BOTÓN DE EXAMINAR:
-        self.button = tk.Button(
+        self.button = Button(
             self.frame,
             text="Examinar...",
             font=40,
             command=lambda: browsefunc(self.dragger),
-            bd=4,
+            bd=5,
             bg="#7A7A7A",  # Fondo gris
             activebackground="#DDDDDD",  # Fondo al pasar el mouse
             cursor="based_arrow_up",
+            relief=tk.RAISED,
+            focuscolor=""
         )
         self.button.bind("<Enter>", on_enter_examinar)
         self.button.bind("<Leave>", on_leave_examinar)

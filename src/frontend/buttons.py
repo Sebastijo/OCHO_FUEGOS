@@ -8,10 +8,12 @@ Fecha: 08/01/2024
 Lenguaje: Python 3.11.7
 Librerías:
 - tkinter: 8.6.12
+- tkmacosx: 1.0.5
 """
 
 # Importamos paquetes
 import tkinter as tk
+from tkmacosx import Button
 
 # modulos propios
 from ..config import variables as var
@@ -28,7 +30,12 @@ font = var.font
 # Creamos la clase Boton que corresponde a los botones que se usarán en el GUI (exceptuando "?", que se definirá directamente cuando se use).
 class Boton:
     def __init__(
-        self, contenedor: tk.Frame, text: str, command: callable, style: str
+        self,
+        contenedor: tk.Frame,
+        text: str,
+        command: callable,
+        style: str,
+        width: int = 100,
     ) -> None:
         """
         Inicializa una instancia de la clase Boton.
@@ -53,7 +60,7 @@ class Boton:
 
         # Crear el botón
         self.style = style
-        self.boton = tk.Button(
+        self.boton = Button(
             contenedor,
             text=text,
             command=command,
@@ -65,7 +72,10 @@ class Boton:
             bd=3,
             relief=tk.RAISED,
             cursor="hand2",
+            focuscolor="",
         )
+        if width != None:
+            self.boton.config(width=width)
 
         self.boton.bind(
             "<Enter>",
@@ -163,7 +173,7 @@ class Boton:
         Returns:
 
         """
-        self.boton.config(state="disabled")
+        self.boton.config(state="disabled", bg="gray", fg="white")
 
     def enable(self):
         """
@@ -172,4 +182,14 @@ class Boton:
         Returns:
 
         """
-        self.boton.config(state="normal")
+        style = self.style
+        self.boton.config(state="normal", bg=var.bg[style], fg=var.bg[style])
+
+    def pack_forget(self):
+        """
+        Olvida el botón.
+
+        Returns:
+
+        """
+        self.boton.pack_forget()

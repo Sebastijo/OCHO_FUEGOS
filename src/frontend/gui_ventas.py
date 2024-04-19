@@ -16,6 +16,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinterdnd2 import *
 import pandas as pd
+from pathlib import Path
 import os
 import threading
 import traceback
@@ -157,6 +158,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
             "Reporte de errores",
             lambda: print("por revisar:"),
             "output_button",
+            width=None,
         )
     )
 
@@ -214,12 +216,13 @@ def foreplay(root: tk.Tk, ejecutar: Boton, barrasBusqueda: dict) -> dict:
                         con lo que no puede ser modificado. Asegúrese de que esté cerrado durante la ejecución del programa.
                         El error interno es: {e}"""
         inputErrorWindow(root, error_message)
-        ejecutar.enable()
+        # ejecutar.enable()
+        ejecutar.pack(side=tk.RIGHT, anchor="n")
         return
     # Guardamos los paths de los archivos seleccionados
     inputPaths = {}  # Diccionario que contiene los paths de los archivos seleccionados
     for tipo in barrasBusqueda:
-        inputPaths[tipo] = barrasBusqueda[tipo].get("1.0", "end-1c").replace("/", "\\")
+        inputPaths[tipo] = Path(barrasBusqueda[tipo].get("1.0", "end-1c")).as_posix()
 
     return inputPaths
 
@@ -340,7 +343,9 @@ def runVentas(
     Returns:
         None
     """
-    ejecutar.disable()
+    # ejecutar.disable()
+    ejecutar.pack_forget()
+    print("olvidao")
 
     def update_loading_bar():
         """
@@ -397,14 +402,17 @@ def runVentas(
     loading_bar_frame_name = loading_bar.winfo_parent()
     loading_bar_frame = root.nametowidget(loading_bar_frame_name)
     loading_bar_frame.pack(side=tk.LEFT, padx=5, pady=0, fill=tk.BOTH, expand=True)
-    threading.Thread(target=sex_threader).start()
+    sex_thread = threading.Thread(target=sex_threader)
+    sex_thread.setDaemon(True)
+    sex_thread.start()
 
     def on_sex_finnished(event):
         if sex_result["Exception"] != False:
             e = sex_result["Exception"]
             inputErrorWindow(root, e)
             loading_bar_frame.pack_forget()
-            ejecutar.enable()
+            # ejecutar.enable()
+            ejecutar.pack(side=tk.RIGHT, anchor="n")
             return
 
         errores = sex_result["errores"]
@@ -419,7 +427,8 @@ def runVentas(
         )
         # loading_bar.stop()
         loading_bar_frame.pack_forget()
-        ejecutar.enable()
+        # ejecutar.enable()
+        ejecutar.pack(side=tk.RIGHT, anchor="n")
 
     # Bind event for process finished
     root.bind("<<ProcessFinished>>", on_sex_finnished)

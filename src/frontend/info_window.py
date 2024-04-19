@@ -7,14 +7,17 @@ Fecha: 09/01/2024
 Lenguaje: Python 3.11.7
 Librerías:
 - tkinter: 8.6.12
+- tkmacosx: 1.0.5
 """
 
 # Importamos paquetes
 import tkinter as tk
 import tkinter.font as tkfont
+from tkmacosx import Button
 
 # modulos propios
 from ..config import variables as var
+from .buttons import Boton
 
 
 # Variables globales
@@ -39,12 +42,6 @@ def infoWindow(info: str, window: tk.Tk) -> None:
     Returns:
         None
     """
-
-    def on_enter_errorButton(e):
-        errorWindowButton["background"] = "#000D56"
-
-    def on_leave_errorButton(e):
-        errorWindowButton["background"] = "#001693"
 
     say = info
     errorWindow = tk.Toplevel(window)
@@ -90,7 +87,12 @@ def infoWindow(info: str, window: tk.Tk) -> None:
 
     cleaned_text = "\n".join(line.lstrip() for line in say.splitlines())
     content = tk.Text(
-        errorWindowLabel, yscrollcommand=scrollbar.set, wrap=tk.WORD, font=30, bg=background, fg="#DDDDDD"
+        errorWindowLabel,
+        yscrollcommand=scrollbar.set,
+        wrap=tk.WORD,
+        font=30,
+        bg=background,
+        fg="#DDDDDD",
     )
     content.insert(tk.END, cleaned_text)
     content.config(state=tk.DISABLED)
@@ -99,20 +101,9 @@ def infoWindow(info: str, window: tk.Tk) -> None:
     scrollbar.config(command=content.yview)
 
     exitFrame.pack(anchor=tk.W)
-    errorWindowButton = tk.Button(
-        exitFrame,
-        text="OK",
-        font=40,
-        command=errorWindow.destroy,
-        bg="#001693",
-        fg="#FFFFFF",
-        bd=3,
-        width=10,
-        cursor="hand2",
-    )
+    errorWindowButton = Boton(exitFrame, text="OK", command=errorWindow.destroy, style="output_button")
+
     errorWindowButton.grid(column=3, row=1)
-    errorWindowButton.bind("<Enter>", on_enter_errorButton)
-    errorWindowButton.bind("<Leave>", on_leave_errorButton)
 
 
 class InfoBoton:
@@ -132,13 +123,14 @@ class InfoBoton:
             None
         """
         self.info = info
-        self.boton = tk.Button(
+        self.boton = Button(
             contenedor,
             text="?",
-            width=1,
+            width=15,
             relief=tk.RAISED,
             command=lambda: infoWindow(self.info, self.boton.winfo_toplevel()),
             cursor="hand2",
+            focuscolor=""
         )
         self.boton["font"] = tkfont.Font(size=font["?"])
         self.boton.bind("<Enter>", lambda event: self.boton.config(bg=bg_on_enter["?"]))

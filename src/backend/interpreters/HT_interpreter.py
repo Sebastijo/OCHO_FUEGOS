@@ -218,6 +218,15 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
         "）", ")"
     )
 
+    # Identificamos la columna VAT
+    assert any(
+        "vat" in str(value).lower() for value in cost["其他费用 Additional Fees"].values
+    ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'VAT' en la columna '其他费用 Additional Fees'."
+    VAT_location = cost[
+        cost["其他费用 Additional Fees"].str.contains("vat", case=False, na=False)
+    ].index[0]
+    cost.at[VAT_location, "其他费用 Additional Fees"] = "VAT"
+
     embarque = [main, cost, note]
     for idx in range(len(embarque)):
         embarque[idx] = embarque[idx].reset_index(drop=True)
