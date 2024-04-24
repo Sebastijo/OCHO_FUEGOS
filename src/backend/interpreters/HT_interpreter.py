@@ -130,12 +130,16 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     embarque = embarque.dropna(axis=1, how="all")
 
     main_location = embarque[embarque.iloc[:, 0] == "日期"].index[0]
+    embarque_copy = embarque.copy()
     embarque = embarque.iloc[main_location:].reset_index(drop=True)
 
     concatenated_string = embarque.iloc[0] + " " + embarque.iloc[1]
     embarque.columns = concatenated_string
     embarque = embarque.iloc[2:]
     embarque.reset_index(drop=True, inplace=True)
+    if not "LOCALIDAD" in embarque.columns:
+        total_rmb_column = embarque.columns.get_loc("总数(人民币) Total RMB")
+        localidad = str(embarque_copy.iloc[main_location - 2, total_rmb_column])
 
     embarque.columns = [
         str(col) if not isinstance(col, float) else "nan" for col in embarque.columns
@@ -163,11 +167,15 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     main = embarque.iloc[: summarry_location + 1].copy().reset_index(drop=True)
     not_main = embarque.iloc[cost_location:].copy().reset_index(drop=True)
 
+    if not "LOCALIDAD" in main.columns:
+        main["LOCALIDAD"] = localidad
+
     if "总数 (美金) Total" in main.columns:
         main = main.rename(columns={"总数 (美金) Total": "总数 (美金) Total USD"})
 
     wanted_columns = [
         "日期 Date",
+        "LOCALIDAD",
         "板号 Pallet No.",
         "果园 CSG",
         "品种 Variety",
@@ -199,6 +207,8 @@ def interpreter_12Islands(liquidacion: str) -> tuple[list, list]:
     main = main[wanted_columns]
 
     main.at[main.index[-1], "品种 Variety"] = np.nan
+
+    main["LOCALIDAD"] = main["LOCALIDAD"].replace("nan", np.nan)
 
     not_main = not_main.dropna(axis=1, how="all")
 

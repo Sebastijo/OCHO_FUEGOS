@@ -175,6 +175,7 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
 
     liquidacion_df = liquidacion_df[wanted_columns]
     # Definimos la tabla de costo (removemos las "liquidations")
+
     cost = (
         (
             liquidacion_df.iloc[summary_location + 1 :]
@@ -185,6 +186,9 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
         .iloc[:-1]
         .copy()
     )
+
+    if "LOCALIDAD" in cost.columns:
+        cost = cost.drop(columns="LOCALIDAD")
 
     if se_remplazo_sales_boxes_por_CSG:
         liquidacion_df = liquidacion_df.drop(columns=["果园 CSG"])
@@ -302,6 +306,8 @@ def interpreter_standard(liquidacion: Union[str, pd.DataFrame]) -> tuple[list, l
     assert any(
         "vat" in str(value).lower() for value in cost["其他费用 Additional Fees"].values
     ), "No se pudo encontrar la fila de arancel adicional: no se encontró la fila que contenga 'VAT' en la columna '其他费用 Additional Fees'."
+
+    main["LOCALIDAD"] = main["LOCALIDAD"].replace("nan", np.nan)
 
     liquidacion_list = [[main, cost, note]]
 

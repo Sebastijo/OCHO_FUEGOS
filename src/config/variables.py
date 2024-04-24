@@ -159,6 +159,7 @@ COD_PUERTO_EMBARQUE = {
 main_dict_liq = {  # 12Islands
     "Observacion": "Observacion",  # New
     "日期 Date": "FECHA VENTA",  # New
+    "LOCALIDAD": "LOCALIDAD",  # New
     "板号 Pallet No.": "FOLIO",  # Old
     "果园 CSG": "CSG",  # Old
     "品种 Variety": "VARIEDAD",  # Old
@@ -175,6 +176,7 @@ main_dict_liq = {  # 12Islands
 # Diccionario para el main table de liquidacion_interpreter.py, liquidacion_standard.
 main_dict_liq_standard = {  # Standard -> 12Islands
     "观察": "Observacion",  # New
+    "LOCALIDAD": "LOCALIDAD",  # New
     "日期": "日期 Date",  # New
     "版号": "板号 Pallet No.",  # Old
     "CSG": "果园 CSG",  # Old
@@ -205,6 +207,7 @@ main_dict_liq_JF = {  # JF -> Standard
 # Columnas necesarias para el formato HFF de liquidacion
 main_list_liq_HFF = [
     "观察",
+    "LOCALIDAD",
     "到货数量",
     "品种",
     "版号",

@@ -345,7 +345,6 @@ def runVentas(
     """
     # ejecutar.disable()
     ejecutar.pack_forget()
-    print("olvidao")
 
     def update_loading_bar():
         """

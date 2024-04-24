@@ -61,6 +61,7 @@ def interpreter_HFF_SEA(liquidacion: str) -> pd.DataFrame:
         "货品" in liquidacion_df.iloc[:, 0].values
     ), f"La tabla principal no fue encontrada en el archivo {liquidacion}: no existe la columna '{'货品'}' en la columna 1 del archivo .xlsx."
     main_location = liquidacion_df[liquidacion_df.iloc[:, 0] == "货品"].index[0]
+    localidad = liquidacion_df.iloc[main_location - 3, 1][-2:]
     liquidacion_df = liquidacion_df.iloc[main_location:].reset_index(drop=True)
 
     # Establecemos los nombres de las columnas como la primera fila
@@ -130,6 +131,8 @@ def interpreter_HFF_SEA(liquidacion: str) -> pd.DataFrame:
             lambda x: str(x).rstrip("0").rstrip(".") if "." in str(x) else str(x)
         )
     main.at[last_index, "尺寸"] = np.nan
+    main["LOCALIDAD"] = "LOCALIDAD"
+    main.loc[1:, "LOCALIDAD"] = localidad
 
     cost["尺寸"] = np.nan
     cost["单价"] = np.nan
@@ -141,5 +144,5 @@ def interpreter_HFF_SEA(liquidacion: str) -> pd.DataFrame:
 
     liquidacion_df = pd.concat([main, cost])
     liquidacion_df.iloc[0] = liquidacion_df.columns
-
+    
     return liquidacion_df

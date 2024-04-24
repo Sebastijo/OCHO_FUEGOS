@@ -40,8 +40,7 @@ if __name__ == "__main__":
     folder = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones"
 
     # Ejemplos de liquidaciones reales
-    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\HT_Sales Summary 784-38464226-8F-5.xlsx"
-    liquidacion_triple = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\tester_3_hojas.pdf"
+    liquidacion = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-045-91458345-X.xlsx"
 
 
 # The following is called "embarques_three_tables" since, before update, it took a list of lists of DataFrames and returned

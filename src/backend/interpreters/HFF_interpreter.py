@@ -77,6 +77,10 @@ def interpreter_HFF(liquidacion: Union[str, pd.DataFrame]) -> pd.DataFrame:
     main_location = liquidacion_df[liquidacion_df.iloc[:, 0] == "观察"].index[0]
     liquidacion_df = liquidacion_df.iloc[main_location:].reset_index(drop=True)
 
+    if not "LOCALIDAD" in liquidacion_df.columns:
+        liquidacion_df["LOCALIDAD"] = "LOCALIDAD"
+        liquidacion_df.loc[2:, "LOCALIDAD"] = str(np.nan)
+
     # Establecemos los nombres de las columnas como la primera fila
     liquidacion_df.columns = liquidacion_df.iloc[0]
     assert (

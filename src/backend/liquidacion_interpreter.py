@@ -56,8 +56,8 @@ main_list_liq_HFF = var.main_list_liq_HFF
 main_list_liq_HFF_SEA = var.main_list_liq_HFF_SEA
 
 if __name__ == "__main__":
-    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-157-84730601-X.xlsx"
-    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-369-88368825-X.xlsx"
+    example1 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-AIR-045-91458345-X.xlsx"
+    example2 = r"C:\Users\spinc\Desktop\OCHO_FUEGOS\data\input\Liquidaciones\BQ_Sales Report-8F-BY SEA-FSCU5743414.xlsx"
 
 
 def interpreter(liquidacion: str) -> tuple[list, list]:

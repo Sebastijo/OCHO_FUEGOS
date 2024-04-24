@@ -64,6 +64,7 @@ def interpreter_BQ(liquidacion: str) -> pd.DataFrame:
         "Date" in liquidacion_df.iloc[:, 0].values
     ), f"La tabla principal no fue encontrada en el archivo {liquidacion}: no existe la columna '{'Date'}' en la columna 1 del archivo .xlsx."
     main_location = liquidacion_df[liquidacion_df.iloc[:, 0] == "Date"].index[0]
+    localidad = str(liquidacion_df.iloc[main_location - 1, 0]).lstrip("Market：")
     liquidacion_df = liquidacion_df.iloc[main_location:].reset_index(drop=True)
 
     # Nos aseguramos que tenga las columnas necesarias
@@ -131,6 +132,9 @@ def interpreter_BQ(liquidacion: str) -> pd.DataFrame:
     liquidacion_df.iloc[-1] = liquidacion_df.iloc[-1].apply(
         lambda cell: np.nan if "合计" in str(cell) else cell
     )
+
+    liquidacion_df["LOCALIDAD"] = "LOCALIDAD"
+    liquidacion_df.loc[1:, "LOCALIDAD"] = localidad
 
     # Movemos los índices dos columnas a la derecha
     assert any(
