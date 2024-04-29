@@ -14,6 +14,7 @@ Librerías:
 # Importamos paquetes
 from typing import Union
 import tkinter as tk
+from tkinter import filedialog
 from tkinterdnd2 import *
 from tkmacosx import Button
 
@@ -29,7 +30,10 @@ background = var.bg["window"]
 
 class BarraBusqueda:
     def __init__(
-        self, contenedor: Union[tk.Frame, TkinterDnD.Tk], content: str
+        self,
+        contenedor: Union[tk.Frame, TkinterDnD.Tk],
+        content: str,
+        directory: bool = False,
     ) -> None:
         """
         Inicializa una instancia de la clase BarraBusqueda.
@@ -89,13 +93,13 @@ class BarraBusqueda:
             self.frame,
             text="Examinar...",
             font=40,
-            command=lambda: browsefunc(self.dragger),
+            command=lambda: browsefunc(self.dragger, directory),
             bd=5,
             bg="#7A7A7A",  # Fondo gris
             activebackground="#DDDDDD",  # Fondo al pasar el mouse
             cursor="based_arrow_up",
             relief=tk.RAISED,
-            focuscolor=""
+            focuscolor="",
         )
         self.button.bind("<Enter>", on_enter_examinar)
         self.button.bind("<Leave>", on_leave_examinar)
@@ -153,15 +157,21 @@ def on_leave_examinar(event):
     event.widget["background"] = "#7A7A7A"
 
 
-def browsefunc(text: tk.Widget) -> None:
+def browsefunc(text: tk.Widget, directory: bool = False) -> None:
     file_types = [
         ("All Files", "*.*"),
         ("Excel Files", "*.xlsx;*.xls"),
         ("PDF Files", "*.pdf"),
     ]
-    filename = tk.filedialog.askopenfilename(filetypes=file_types)
-    text.delete("1.0", tk.END)
-    text.insert(tk.END, filename)
+
+    if directory:
+        filename = tk.filedialog.askdirectory()
+    else:
+        filename = tk.filedialog.askopenfilename(filetypes=file_types)
+
+    if not filename == "":
+        text.delete("1.0", tk.END)
+        text.insert(tk.END, filename)
 
 
 # Probamos la clase BarraBusqueda

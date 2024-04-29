@@ -85,8 +85,13 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         "liquidaciones": "Seleccione una carpeta con liquidaciones",
     }
     barrasBusqueda = {}  # Lista que contiene las barras de busqueda
+    directory = False
     for idx, tipo in enumerate(contents):
-        barrasBusqueda[tipo] = BarraBusqueda(frameBusquedas, contents[tipo])
+        if idx == 3:
+            directory = True
+        barrasBusqueda[tipo] = BarraBusqueda(
+            frameBusquedas, contents[tipo], directory=directory
+        )
         # Creamos la barra de busqueda con el contenido descrito
         barrasBusqueda[tipo].grid(
             row=idx, column=0, sticky="ew"
@@ -101,26 +106,25 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         Este programa te permite gestionar información crucial de embarques, facturas, tarifas y liquidaciones mediante una práctica base de formato Excel. Sigue estos simples pasos:
 
         1. Configuración Inicial:
-        - Dirígete a la ubicación del programa en tu dispositivo y asegúrate de que la carpeta 'config' contenga los archivos esperados.
-        - Puedes ajustar los contenidos de la carpeta 'config' según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
-        - Si la carpeta 'config' se corrompe, bórrala y vuelve a ejecutar el programa para restablecerla con los valores predeterminados.
+        - Dirígete a la ubicación del programa en tu dispositivo y asegúrate de que la carpeta 'Datos del programa>Variables' contenga los archivos esperados (cod_puerto_destino, costo_seco, flete_real, precios_contrato).
+        - Puedes ajustar los contenidos de la carpeta 'Variables' según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
+        - Si la carpeta 'Variables' se corrompe, bórrala y vuelve a ejecutar el programa para restablecerla con los valores predeterminados (asegurate de que los contenidos de los ajustes sean los esperados anted de volver a utilizar el programa).
 
         2. Cargar Archivos:
         - Arrastra tus archivos a las áreas correspondientes en el menú principal.
         - La barra para subir liquidaciones acepta formatos como Excel, PDF o una carpeta que contenga estos documentos.
-        - Formatos de liquidaciones admitidos: 12Islands (.pdf), JumboFruit (comienza con 'BQ'), Happy Farm Fruit (comienza con 'HFF'), y formato estándar (comienza con '8F').
+        - Formatos de liquidaciones admitidos: 12Islands (.pdf), JumboFruit (comienza con 'BQ'), Happy Farm Fruit (comienza con 'HFF').
         - Presiona 'Ejecutar' después de cargar tus archivos y espera a que el programa los procese.
 
         3. Resultados:
-        - Una vez completado, encontrarás el resultado en la carpeta 'outputs' junto con un informe de errores en esta interfaz.
+        - Una vez completado, encontrarás el resultado en la carpeta 'Datos del programa>outputs' junto con un informe de errores en esta interfaz.
         - El informe incluye liquidaciones no leídas y embarques con inconsistencias.
         - Liquidaciones no leídas: errores de formato en el input.
         - Inconsistencias en liquidaciones: problemas en el contenido (por ejemplo, comisiones incorrectas).
 
         4. Salida Final:
-        - La carpeta 'outputs' contendrá un Excel con tres hojas: Base de Control, Liquidaciones no Pareadas y No Vendidos.
-        - Liquidaciones no pareadas: no asociadas a ningún embarque de la base de embarques.
-        - No vendidos: embarques cuyas unidades se venden a $0 USD.
+        - La carpeta 'outputs' contendrá un Excel con dos hojas: Base de Control, Liquidaciones no Pareadas.
+        - Liquidaciones no pareadas: no asociadas a ningún embarque de la base de embarques..
 
         5. Soporte y Contacto:
         - Para agregar un nuevo formato, actualizar el programa o para cualquier necesidad adjacente a la ingeniería o a la ingeniería matemática, no dude en contactar al desarrollador (datos disponibles al final de esta ventana).

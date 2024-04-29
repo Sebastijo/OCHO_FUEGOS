@@ -68,13 +68,10 @@ def infoWindow(info: str, window: tk.Tk) -> None:
         datosFrame, text=telefono + " (WhatsApp)", bg=background, fg="#DDDDDD", bd=0
     )
     datosLabel3 = tk.Label(datosFrame, text=email, bg=background, fg="#DDDDDD", bd=0)
-    ESPACIOXD = tk.Label(
-        exitFrame, text="asdasdasdasdasdasdasdas", bg=background, fg=background
-    )
+
     # errorWindowExit   = tk.Frame(exitFrame, bd=10, bg = background)
     errorWindowLabel.pack()
-    datosFrame.grid(column=1, row=1)
-    ESPACIOXD.grid(column=2, row=1)
+    datosFrame.pack(side="left")
     datosLabel1.pack(anchor=tk.W)
     datosLabel1_.pack(anchor=tk.W)
     datosLabel2.pack(anchor=tk.W)
@@ -100,10 +97,21 @@ def infoWindow(info: str, window: tk.Tk) -> None:
 
     scrollbar.config(command=content.yview)
 
-    exitFrame.pack(anchor=tk.W)
-    errorWindowButton = Boton(exitFrame, text="OK", command=errorWindow.destroy, style="output_button")
+    exitFrame.pack(fill="both")
+    errorWindowButton = Boton(
+        exitFrame, text="OK", command=errorWindow.destroy, style="output_button"
+    )
 
-    errorWindowButton.grid(column=3, row=1)
+    # We pack the errorWindowButton at the center of the frame.
+    blank_space = tk.Label(
+        exitFrame,
+        text="Estudiante Ingeniería Civil Matemática",
+        bg=background,
+        fg=background,
+        bd=0,
+    )
+    blank_space.pack(side="right")
+    errorWindowButton.pack(expand=True, anchor="center")
 
 
 class InfoBoton:
@@ -130,7 +138,7 @@ class InfoBoton:
             relief=tk.RAISED,
             command=lambda: infoWindow(self.info, self.boton.winfo_toplevel()),
             cursor="hand2",
-            focuscolor=""
+            focuscolor="",
         )
         self.boton["font"] = tkfont.Font(size=font["?"])
         self.boton.bind("<Enter>", lambda event: self.boton.config(bg=bg_on_enter["?"]))
