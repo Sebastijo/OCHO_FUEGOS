@@ -4,6 +4,7 @@ El objetivo de este arhivo es mantener todas las variables globales del programa
 
 import os
 import sys
+import re
 
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"
@@ -248,3 +249,4 @@ formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
 
 # Ubicación del programa en el dispositivo del usuario
 directory = os.path.dirname(os.path.realpath(sys.argv[0]))
+directory = re.sub(r"Controlador\.app/Contents/MacOS$", "", directory)

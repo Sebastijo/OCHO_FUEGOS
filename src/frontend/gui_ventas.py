@@ -152,9 +152,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
     )
     output = []
     for i in range(2):
-        output.append(
-            tk.Label(outputFrame, width=81, bg=bg["window_text"], fg=fg["window_text"])
-        )
+        output.append(tk.Label(outputFrame, bg=bg["window_text"], fg=fg["window_text"]))
         output[i].pack()
     output.append(
         Boton(
