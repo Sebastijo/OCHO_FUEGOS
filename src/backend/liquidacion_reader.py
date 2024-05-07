@@ -482,6 +482,7 @@ def feature_engine(embarque: embarqueL) -> None:
         embarque.main["COSTO"] + embarque.main["COMISION"]
     )
 
+
     # Agregamows la columna con la ubicación
     ubicacion = str((embarque.location[0], "pag. " + str(embarque.location[1])))
     embarque.main["UBICACIÓN"] = ubicacion

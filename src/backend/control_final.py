@@ -182,11 +182,7 @@ def simplifier(liquidaciones: pd.DataFrame, CSG: bool) -> pd.DataFrame:
     for columna_cj, columna_gl in zip(columnas_por_caja, columnas_globales):
         simplified[columna_cj] = simplified[columna_gl] / simplified["CAJAS LIQUIDADAS"]
 
-    columnas_por_kg = [
-        "COSTO/KG",
-        "COMISION/KG",
-        "VAT/KG"
-    ]
+    columnas_por_kg = ["COSTO/KG", "COMISION/KG", "VAT/KG"]
 
     columnas_globales = [
         "COSTO",
@@ -569,35 +565,63 @@ def control(
                 axis=1,
             )
 
-        if update_loading_bar:  # 10ma operacion
-            update_loading_bar()
+        # Define the condition for rows where "MODALIDAD DE VENTA" is "Firme"
+        condition_Firme = control_df["MODALIDAD DE VENTA"] == "Firme"
 
-    df_output = [control_df, liquidaciones_no_pareadas]
-    for idx, df in enumerate(df_output):
-        df_output[idx].replace(
-            {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
+        # Assign "FACTURA PROFORMA" values to "LIQ FINAL" where the condition is True
+        control_df.loc[condition_Firme, "LIQ FINAL"] = control_df.loc[
+            condition_Firme, "FACTURA PROFORMA"
+        ].astype(float)
+
+        control_df["RETORNO FOB CALCULADO"] = control_df["LIQ FINAL"]
+        condition_CIF_CFR = control_df["INCOTERM"].isin(["CIF", "CFR"])
+        control_df.loc[condition_CIF_CFR, "RETORNO FOB CALCULADO"] = (
+            control_df.loc[condition_CIF_CFR, "LIQ FINAL"]
+            - control_df.loc[condition_CIF_CFR, "FLETE TOTAL"]
+            - control_df.loc[condition_CIF_CFR, "GASTOS LOCALES USD"]
         )
 
-    # Cambiamos el formato de las fechas
-    def convert_to_date(value):
-        try:
-            value = pd.to_datetime(value).strftime("%Y-%m-%d")
-        except ValueError:
-            pass
-        return value
+        control_df["RETORNO PRODUCTOR"] = control_df["RETORNO FOB CALCULADO"].astype(
+            float
+        ) - control_df["COSTO SECO/KG"].astype(float) * control_df[
+            "KG NET/CAJA"
+        ].astype(
+            float
+        ) * control_df[
+            "CAJAS LIQUIDADAS"
+        ].astype(
+            float
+        )
 
-    date_columns = [
-        "FECHA FACTURA",
-        "FECHA DESPACHO PLANTA",
-        "FECHA EMBALAJE",
-        "ETD",
-        "ETA",
-        "ETD REAL",
-        "ETA REAL",
-        "FECHA VENTA",
-    ]
-    for column in date_columns:
-        df_output[0][column] = df_output[0][column].apply(convert_to_date)
+        df_output = [control_df, liquidaciones_no_pareadas]
+        for idx, df in enumerate(df_output):
+            df_output[idx].replace(
+                {str(np.nan).upper(): np.nan, "NAN": np.nan}, inplace=True
+            )
+
+        # Cambiamos el formato de las fechas
+        def convert_to_date(value):
+            try:
+                value = pd.to_datetime(value).strftime("%Y-%m-%d")
+            except ValueError:
+                pass
+            return value
+
+        date_columns = [
+            "FECHA FACTURA",
+            "FECHA DESPACHO PLANTA",
+            "FECHA EMBALAJE",
+            "ETD",
+            "ETA",
+            "ETD REAL",
+            "ETA REAL",
+            "FECHA VENTA",
+        ]
+        for column in date_columns:
+            df_output[0][column] = df_output[0][column].apply(convert_to_date)
+
+        if update_loading_bar:  # 10ma operacion
+            update_loading_bar()
 
     control_order = [
         col for col in control_df.columns if col not in ["COSTO SECO/KG"]
