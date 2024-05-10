@@ -576,9 +576,9 @@ def control(
         control_df["RETORNO FOB CALCULADO"] = control_df["LIQ FINAL"]
         condition_CIF_CFR = control_df["INCOTERM"].isin(["CIF", "CFR"])
         control_df.loc[condition_CIF_CFR, "RETORNO FOB CALCULADO"] = (
-            control_df.loc[condition_CIF_CFR, "LIQ FINAL"]
-            - control_df.loc[condition_CIF_CFR, "FLETE TOTAL"]
-            - control_df.loc[condition_CIF_CFR, "GASTOS LOCALES USD"]
+            control_df.loc[condition_CIF_CFR, "LIQ FINAL"].fillna(0)
+            - control_df.loc[condition_CIF_CFR, "FLETE TOTAL"].fillna(0)
+            - control_df.loc[condition_CIF_CFR, "GASTOS LOCALES USD"].fillna(0)
         )
 
         control_df["RETORNO PRODUCTOR"] = control_df["RETORNO FOB CALCULADO"].astype(
@@ -623,27 +623,33 @@ def control(
         if update_loading_bar:  # 10ma operacion
             update_loading_bar()
 
-    control_order = [
-        col for col in control_df.columns if col not in ["COSTO SECO/KG"]
-    ] + ["COSTO SECO/KG"]
-    control_df = control_df[control_order]
+    try:
+        control_order = [
+            col for col in control_df.columns if col not in ["COSTO SECO/KG"]
+        ] + ["COSTO SECO/KG"]
+        control_df = control_df[control_order]
 
-    liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
-    liquidaciones_no_pareadas = liquidaciones_no_pareadas[
-        liquidaciones_no_pareadas["CAJAS LIQUIDADAS"] != 0
-    ]
+        liquidaciones_no_pareadas = liquidaciones_no_pareadas.drop(columns=["_merge"])
+        liquidaciones_no_pareadas = liquidaciones_no_pareadas[
+            liquidaciones_no_pareadas["CAJAS LIQUIDADAS"] != 0
+        ]
 
-    # Agregamos las liquidaciones sin folio a la base control a la mala
-    no_par_no_folio = liquidaciones_no_pareadas[
-        liquidaciones_no_pareadas["FOLIO"].isnull()
-    ]
-    liquidaciones_no_pareadas = liquidaciones_no_pareadas[
-        liquidaciones_no_pareadas["FOLIO"].notnull()
-    ]
-    control_df = pd.concat([control_df, no_par_no_folio])
+        # Agregamos las liquidaciones sin folio a la base control a la mala
+        no_par_no_folio = liquidaciones_no_pareadas[
+            liquidaciones_no_pareadas["FOLIO"].isnull()
+        ]
+        liquidaciones_no_pareadas = liquidaciones_no_pareadas[
+            liquidaciones_no_pareadas["FOLIO"].notnull()
+        ]
+        control_df = pd.concat([control_df, no_par_no_folio])
 
-    for df in [control_df, liquidaciones_no_pareadas]:
-        df.reset_index(drop=True, inplace=True)
+        for df in [control_df, liquidaciones_no_pareadas]:
+            df.reset_index(drop=True, inplace=True)
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        print(e)
+        print("If no liquidations were uploaded and this error arrises, ignore it.")
+
 
     if update_loading_bar:
         update_loading_bar()
