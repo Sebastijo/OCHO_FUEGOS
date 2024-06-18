@@ -414,33 +414,7 @@ def control(
 
     # Si no hay liquidaciones, entonces el control final es el pseudo control con las columnas de liquidación vacías.
     if len(liq_sin_CSG) + len(liq_con_CSG) == 0:
-        control_df = pseudo_control
-        for column in [
-            "UBICACIÓN",
-            "FECHA VENTA",
-            "FOLIO",
-            "CSG",
-            "VARIEDAD",
-            "CALIBRES",
-            "CAJAS LIQUIDADAS",
-            "RMB/CJ",
-            "TOTAL RMB",
-            "TOTAL USD",
-            "RETORNO FOB/CJ",
-            "RETORNO FOB",
-            "COSTO",
-            "COSTO/CJ",
-            "COSTO/KG",
-            "COMISION",
-            "COMISION/CJ",
-            "COMISION/KG",
-            "VAT",
-            "VAT/CJ",
-            "VAT/KG",
-            "COSTO Y COMISION",
-            "LIQ FINAL",
-        ]:
-            control_df[column] = None
+        control_df = pseudo_control.copy()
     else:
         liquidaciones_sin_CSG_no_pareadas = pd.DataFrame()
         liquidaciones_con_CSG_no_pareadas = pd.DataFrame()
