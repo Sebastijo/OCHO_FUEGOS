@@ -6,6 +6,8 @@ import os
 import sys
 import re
 
+from src.config.universal_variables import directory
+
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"
 telefono = "+56 9 8918 6914"
@@ -248,5 +250,4 @@ key_liq_incompleto = ["FOLIO", "VARIEDAD", "CALIBRES", "KG NET/CAJA"]
 formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
 
 # Ubicación del programa en el dispositivo del usuario
-directory = os.path.dirname(os.path.realpath(sys.argv[0]))
-directory = re.sub(r"Controlador\.app/Contents/MacOS$", "", directory)
+directory = directory

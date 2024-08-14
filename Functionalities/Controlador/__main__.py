@@ -49,6 +49,6 @@ if not os.path.exists(output_folder):
 
 
 # Iniciamos la interface de eusuario
-from src.frontend.gui_ventas import panqueca
+from src.frontend.gui_ventas import controlador_starter
 
-panqueca()
+controlador_starter()

@@ -51,7 +51,7 @@ datos_folder = os.path.join(directory, "Datos del programa")
 control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
 
 
-def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
+def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton, ttk.Progressbar]:
     """
     Función que define los objetos y posiciones de la GUI.
 
@@ -64,6 +64,7 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton]:
         barrasBusqueda: Diccionario con las barras de búsqueda de archivos.
         frameFinalButtonsAndBar: Marco de los botones finales y barra de progreso.
         ejecutar: Botón de ejecución.
+        loading_bar: Barra de progreso.
 
     Raises:
         None
@@ -435,7 +436,7 @@ def runVentas(
     root.bind("<<ProcessFinished>>", on_sex_finnished)
 
 
-def panqueca():
+def controlador_starter():
     """
     Función que corre el GUI de ventas. Genera el xls de control al presionar Ejecutar.
     Orchestra todos los elementos del modulo.
