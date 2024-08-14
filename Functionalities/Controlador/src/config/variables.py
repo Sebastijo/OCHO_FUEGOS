@@ -6,7 +6,12 @@ import os
 import sys
 import re
 
-from src.config.universal_variables import directory
+if __name__ == "__main__":
+    from src.config.universal_variables import directory
+else:
+    from src.config.universal_variables import directory
+
+
 
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"

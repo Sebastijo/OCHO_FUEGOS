@@ -16,10 +16,7 @@ import shutil
 import pandas as pd
 import re
 
-# The following will update automatically when running the program. Desired for executable version.
-directory = os.path.dirname(os.path.realpath(sys.argv[0]))
-directory = re.sub(r"Controlador\.app/Contents/MacOS$", "", directory)
-
+from src.config.universal_variables import directory
 
 # The path to the Configuraciones folder
 datos_folder = os.path.join(directory, "Datos del programa")

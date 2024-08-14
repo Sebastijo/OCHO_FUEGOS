@@ -20,6 +20,7 @@ from pathlib import Path
 import os
 import threading
 import traceback
+from typing import Union
 
 # modulos propios
 if __name__ == "__main__":
@@ -51,12 +52,14 @@ datos_folder = os.path.join(directory, "Datos del programa")
 control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
 
 
-def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton, ttk.Progressbar]:
+def main_window_maker(
+    padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False
+) -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton, ttk.Progressbar]:
     """
     Función que define los objetos y posiciones de la GUI.
 
     Args:
-        None
+        padre (tk.Tk or TkinterDnD.Tk, optional): Ventana padre. Defaults to False.
 
     Returns:
         root: Ventana principal de la GUI.
@@ -67,11 +70,11 @@ def main_window_maker() -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton, ttk.
         loading_bar: Barra de progreso.
 
     Raises:
-        None
+        AssertionError: Si el padre no es una instancia de tk.Tk o False.
     """
 
     # Creación de la ventana principal utilizando tkinter
-    ventana = Ventana(titulo=title["main"], DnD=True)
+    ventana = Ventana(titulo=title["main"], DnD=True, padre=padre)
     root = ventana.root
     mainFrame = ventana.mainFrame
 
@@ -436,7 +439,7 @@ def runVentas(
     root.bind("<<ProcessFinished>>", on_sex_finnished)
 
 
-def controlador_starter():
+def controlador_starter(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> None:
     """
     Función que corre el GUI de ventas. Genera el xls de control al presionar Ejecutar.
     Orchestra todos los elementos del modulo.
@@ -450,7 +453,7 @@ def controlador_starter():
         outputFrame,
         ejecutar,
         loading_bar,
-    ) = main_window_maker()
+    ) = main_window_maker(padre)
 
     ejecutar.configure(
         command=lambda: runVentas(
