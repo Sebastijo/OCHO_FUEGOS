@@ -86,7 +86,7 @@ class Ventana:
                 )
                 self.mainFrame.pack()
             else:
-                self.root = TkinterDnD.Toplevel(padre)
+                self.root = tk.Toplevel(padre)
                 self.root.config(bg=bg["window"])
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):

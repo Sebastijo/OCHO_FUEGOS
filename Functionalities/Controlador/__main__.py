@@ -70,6 +70,6 @@ def run_controlador(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> 
     # Iniciamos la interface de eusuario
     from .src.frontend.gui_ventas import controlador_starter
 
-    controlador_starter(padre)
+    root = controlador_starter(padre)
 
-    return
+    return root

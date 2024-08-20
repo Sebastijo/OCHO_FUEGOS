@@ -1,0 +1,32 @@
+import tkinter as tk
+from tkinter import ttk
+
+def validate_decimal(input_value):
+    # Allow empty input (to delete entries)
+    if input_value == "":
+        return True
+    try:
+        float(input_value)
+        return True
+    except ValueError:
+        return False
+
+root = tk.Tk()
+
+# Name Entry
+tk.Label(root, text="Name:").pack(padx=10, pady=5)
+name_entry = ttk.Entry(root)
+name_entry.pack(padx=10, pady=5)
+
+# Date Entry
+tk.Label(root, text="Date:").pack(padx=10, pady=5)
+date_entry = ttk.Entry(root)
+date_entry.pack(padx=10, pady=5)
+
+# Quantity Entry with validation
+tk.Label(root, text="Quantity:").pack(padx=10, pady=5)
+quantity_entry = ttk.Entry(root, validate="key")
+quantity_entry['validatecommand'] = (root.register(validate_decimal), '%P')
+quantity_entry.pack(padx=10, pady=5)
+
+root.mainloop()

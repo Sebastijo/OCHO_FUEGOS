@@ -21,26 +21,17 @@ import os
 import threading
 import traceback
 from typing import Union
+import sys
 
 # modulos propios
-if __name__ == "__main__":
-    from src.frontend.file_select import BarraBusqueda
-    from src.frontend.buttons import Boton
-    import src.config.variables as var
-    from src.frontend.info_window import InfoBoton
-    from src.frontend.error_window import inputErrorWindow, revisarWindow
-    from src.backend.control_final import control
-    from src.frontend.ventana import Ventana
-    from src.backend.output_doc_maker import export
-else:
-    from .file_select import BarraBusqueda
-    from .buttons import Boton
-    from ..config import variables as var
-    from .info_window import InfoBoton
-    from .error_window import inputErrorWindow, revisarWindow
-    from ..backend.control_final import control
-    from .ventana import Ventana
-    from ..backend.output_doc_maker import export
+from .file_select import BarraBusqueda
+from .buttons import Boton
+from ..config import variables as var
+from .info_window import InfoBoton
+from .error_window import inputErrorWindow, revisarWindow
+from ..backend.control_final import control
+from .ventana import Ventana
+from ..backend.output_doc_maker import export
 
 # Variables universales:
 bg = var.bg  # Color de fondo
@@ -70,7 +61,7 @@ def main_window_maker(
         loading_bar: Barra de progreso.
 
     Raises:
-        AssertionError: Si el padre no es una instancia de tk.Tk o False.
+        None
     """
 
     # Creación de la ventana principal utilizando tkinter
@@ -140,9 +131,23 @@ def main_window_maker(
 
     # Boton que cierra el programa, eliminando los threads abiertos
     def quitter():
-        root.quit()
+        root.destroy()
+        sys.exit()
+    
+    # Boton que cierra la ventana secundaria y vuelve a la principal
+    def go_back():
+        root.destroy()
+        padre.deiconify()
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
+    volver = Boton(
+        frameFinalButtonsAndBar,
+        "Volver",
+        go_back,
+        "output_button",
+    )
+
+    
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
@@ -183,6 +188,8 @@ def main_window_maker(
 
     loading_bar_frame.pack()
     loading_bar_frame.pack_forget()
+    if padre:
+        volver.pack(side=tk.LEFT, anchor="n", padx=7, pady=(4,0)) 
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
@@ -439,7 +446,9 @@ def runVentas(
     root.bind("<<ProcessFinished>>", on_sex_finnished)
 
 
-def controlador_starter(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> None:
+def controlador_starter(
+    padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False
+) -> None:
     """
     Función que corre el GUI de ventas. Genera el xls de control al presionar Ejecutar.
     Orchestra todos los elementos del modulo.
@@ -467,7 +476,10 @@ def controlador_starter(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False)
         )
     )
 
+    if padre:
+        root.protocol("WM_DELETE_WINDOW", lambda: padre.destroy())
+    
     # Inicio del bucle principal para la ejecución de la interfaz gráfica
     root.mainloop()
 
-    return
+    return root

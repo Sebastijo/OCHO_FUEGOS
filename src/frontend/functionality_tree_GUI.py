@@ -11,6 +11,8 @@ from pathlib import Path
 import os
 import threading
 import traceback
+import sys
+import threading
 
 # Importamos paquetes propios
 
@@ -20,16 +22,14 @@ if __name__ == "__main__":
     from src.config import universal_variables as univ
     from src.frontend.GUI_tools import GUI_variables as var
     from Functionalities.Controlador.__main__ import run_controlador
-
-    run_pagos = lambda: print("Funcionalidad no implementada")
+    from Functionalities.Pagos.__main__ import run_pagos
 else:
     from .GUI_tools.ventana import Ventana
     from .GUI_tools.buttons import Boton
     from ..config import universal_variables as univ
     from .GUI_tools import GUI_variables as var
     from Functionalities.Controlador.__main__ import run_controlador
-
-    run_pagos = lambda: print("Funcionalidad no implementada")
+    from Functionalities.Pagos.__main__ import run_pagos
 
 # Variables universales:
 bg = var.bg  # Color de fondo
@@ -53,27 +53,30 @@ def functionality_tree_window_maker():
     """
 
     # Creación de la ventana principal utilizando tkinter
-    ventana = Ventana(titulo=title["main"])
+    ventana = Ventana(titulo=title["main"], DnD=True)
     root = ventana.root
     mainFrame = ventana.mainFrame
 
     def execute_and_destroy_window(function: callable) -> callable:
         """
-        Funcional que recibe una función y entrega una función que leariza lo mismo y que, además, destruye la ventana principal.
+        Función que recibe una función y entrega una función que realiza lo mismo y que, además, oculta la ventana principal.
+        La función recibida debe crear una ventana y devolver esta ventana como output.
+        Como input, debe recibir una ventana padre.
 
         Args:
-            function (callable): Función a ejecutar.
+            function (callable): Función a ejecutar. Debe recibir como argumento la ventana principal.
 
         Returns:
-            callable: Función que ejecuta la función entregada y destruye la ventana principal.
+            callable: Función que ejecuta la función entregada y oculta la ventana principal.
 
         Raises:
-            None
+            AssertionError: Si la función entregada no es callable.
         """
+        assert callable(function), "La función entregada no es callable."
 
         def wrapper():
-            ventana.root.destroy()
-            function(False)
+            ventana.root.withdraw()
+            child = function(ventana.root)
 
         return wrapper
 
@@ -98,10 +101,14 @@ def functionality_tree_window_maker():
             else buttons[functionality].pack(padx=100, pady=5)
         )
 
+    def quitter():
+        root.destroy()
+        sys.exit()
+
     exit_button = Boton(
         mainFrame,
         text="Salir",
-        command=root.quit,
+        command=quitter,
         style="exit_button",
         width=100,
     )

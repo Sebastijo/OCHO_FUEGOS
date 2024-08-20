@@ -50,7 +50,7 @@ class Ventana:
         assert type(ancho) == int, "El ancho debe ser un entero."
         assert type(alto) == int, "El alto debe ser un entero."
         assert (
-            type(padre) in [tk.Tk, TkinterDnD.Tk] or padre == False
+            type(padre) in [tk.Tk, TkinterDnD.Tk, tk.Toplevel] or padre == False
         ), "El padre debe ser una instancia de tk.Tk o False."
         assert type(DnD) == bool, "DnD debe ser un booleano."
         assert ancho >= 0, "El ancho debe ser mayor a 0."
@@ -89,7 +89,7 @@ class Ventana:
                 )
                 self.mainFrame.pack()
             else:
-                self.root = TkinterDnD.Toplevel(padre)
+                self.root = tk.Toplevel(padre)
                 self.root.config(bg=bg["window"])
                 self.root.title(titulo)
                 if not (ancho == 0 and alto == 0):

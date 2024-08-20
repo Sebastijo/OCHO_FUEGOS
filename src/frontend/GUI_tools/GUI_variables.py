@@ -1,3 +1,7 @@
+# Datos personales:
+email = "sebastian.pincheira@ug.uchile.cl"
+telefono = "+56 9 8918 6914"
+
 # Colores:
 title = {
     "main": "Ocho Fuegos - Automatización de procesos corporativos",
