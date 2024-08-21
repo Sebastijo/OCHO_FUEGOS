@@ -18,7 +18,7 @@ from tkinterdnd2 import *
 
 from .src.config import variables as var
 
-directory = var.directory
+directory = var.controlador_dir
 
 
 def run_controlador(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> None:
@@ -36,8 +36,7 @@ def run_controlador(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> 
         None
     """
     # Obtenemos los paths que deben existir antes de correr el programa
-    datos_folder = os.path.join(directory, "Datos del programa")
-    variables_folder = os.path.join(datos_folder, "Variables")
+    variables_folder = os.path.join(directory, "Variables")
     destination_cod_puerto_destino = os.path.join(
         variables_folder, "cod_puerto_destino.json"
     )
@@ -46,7 +45,7 @@ def run_controlador(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> 
     )
     destination_flete_real = os.path.join(variables_folder, "flete_real.xlsx")
     destination_costo_seco = os.path.join(variables_folder, "costo_seco.xlsx")
-    output_folder = os.path.join(datos_folder, "output")
+    output_folder = os.path.join(directory, "output")
 
     config_paths = [
         variables_folder,

@@ -19,9 +19,8 @@ else:
     from ..config import variables as var
     from ..frontend.error_window import inputErrorWindow
 
-directory = var.directory
-datos_folder = os.path.join(directory, "Datos del programa")
-control_path = os.path.join(datos_folder, "output", "Control.xlsx")
+directory = var.controlador_dir
+control_path = os.path.join(directory, "output", "Control.xlsx")
 
 if __name__ == "__main__":
     control_pickle = (

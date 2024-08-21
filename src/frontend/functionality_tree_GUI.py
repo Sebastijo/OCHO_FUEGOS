@@ -76,7 +76,11 @@ def functionality_tree_window_maker():
 
         def wrapper():
             ventana.root.withdraw()
-            child = function(ventana.root)
+            try:
+                child = function(ventana.root)
+            except Exception as e:
+                print(f"Error: {e}")
+                traceback.print_exc()
 
         return wrapper
 

@@ -39,11 +39,10 @@ COD_PUERTO_EMBARQUE = var.COD_PUERTO_EMBARQUE
 key_liq = var.key_liq
 key_liq_incompleto = var.key_liq_incompleto
 formatos_con_CSG = var.formatos_con_CSG
-directory = var.directory
+directory = var.controlador_dir
 
 # Cargamos el codigo de puerto destino actualizado
-datos_folder = os.path.join(directory, "Datos del programa")
-variables_folder = os.path.join(datos_folder, "Variables")
+variables_folder = os.path.join(directory, "Variables")
 with open(os.path.join(variables_folder, "cod_puerto_destino.json"), "r") as file:
     COD_PUERTO_DESTINO_configuracion = json.load(file)
 COD_PUERTO_DESTINO = COD_PUERTO_DESTINO_configuracion

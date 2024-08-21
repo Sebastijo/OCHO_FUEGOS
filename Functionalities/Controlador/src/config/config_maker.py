@@ -16,21 +16,20 @@ import shutil
 import pandas as pd
 import re
 
-from src.config.universal_variables import directory
+from src.config.universal_variables import controlador_dir as directory
 
 # The path to the Configuraciones folder
-datos_folder = os.path.join(directory, "Datos del programa")
-NO_TOCAR_folder = os.path.join(datos_folder, "NO TOCAR")
-variables_folder = os.path.join(datos_folder, "Variables")
-source_cod_puerto_destino = os.path.join(NO_TOCAR_folder, "cod_puerto_destino.json")
+back_up_variables = os.path.join(directory, "back_up_variables")
+variables_folder = os.path.join(directory, "Variables")
+source_cod_puerto_destino = os.path.join(back_up_variables, "cod_puerto_destino.json")
 destination_cod_puerto_destino = os.path.join(
     variables_folder, "cod_puerto_destino.json"
 )
-source_precios_contrato = os.path.join(NO_TOCAR_folder, "precios_contrato.pkl")
+source_precios_contrato = os.path.join(back_up_variables, "precios_contrato.pkl")
 destination_precios_contrato = os.path.join(variables_folder, "precios_contrato.xlsx")
-source_flete_real = os.path.join(NO_TOCAR_folder, "flete_real.pkl")
+source_flete_real = os.path.join(back_up_variables, "flete_real.pkl")
 destination_flete_real = os.path.join(variables_folder, "flete_real.xlsx")
-source_costo_seco = os.path.join(NO_TOCAR_folder, "costo_seco.pkl")
+source_costo_seco = os.path.join(back_up_variables, "costo_seco.pkl")
 destination_costo_seco = os.path.join(variables_folder, "costo_seco.xlsx")
 
 

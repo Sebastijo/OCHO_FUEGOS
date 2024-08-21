@@ -37,10 +37,8 @@ from ..backend.output_doc_maker import export
 bg = var.bg  # Color de fondo
 fg = var.fg  # Color de texto
 title = var.title  # Título de la ventana principal
-directory = var.directory  # Directorio de trabajo
-
-datos_folder = os.path.join(directory, "Datos del programa")
-control_path = os.path.join(datos_folder, "output", "Control.xlsx")  # Path del control
+directory = var.controlador_dir  # Directorio de trabajo
+control_path = os.path.join(directory, "output", "Control.xlsx")  # Path del control
 
 
 def main_window_maker(

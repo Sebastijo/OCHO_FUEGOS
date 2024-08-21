@@ -7,11 +7,9 @@ import sys
 import re
 
 if __name__ == "__main__":
-    from src.config.universal_variables import directory
+    from src.config.universal_variables import ddirectory, controlador_dir
 else:
-    from src.config.universal_variables import directory
-
-
+    from src.config.universal_variables import directory, controlador_dir
 
 # Datos personales:
 email = "sebastian.pincheira@ug.uchile.cl"
@@ -256,3 +254,4 @@ formatos_con_CSG = ["HARVEST-TIME IMP & EXP CO., LIMITED"]
 
 # Ubicación del programa en el dispositivo del usuario
 directory = directory
+controlador_dir = controlador_dir
