@@ -14,73 +14,29 @@ import threading
 import traceback
 from typing import Union
 import sys
+import platform
 
 # Importamos modulos propios
 from src.frontend.GUI_tools.buttons import Boton
 from src.frontend.GUI_tools.ventana import Ventana
-
+from ..backend.control_de_pagos import (
+    agregar_pago,
+    actualizar_moneyLabel,
+    save_control_de_pagos,
+)
 # from src.frontend.GUI_tools.info_window import InfoBoton
 from src.frontend.GUI_tools.error_window import inputErrorWindow, revisarWindow
 from src.config import universal_variables as univ
 from src.frontend.GUI_tools import GUI_variables as var
+from .moneyLabel import MoneyLabel
+from ..backend.clientes import update_clients
 
 # Variables universales:
 bg = var.bg  # Color de fondo
 fg = var.fg  # Color de texto
 title = var.title  # Título de la ventana principal
 directory = univ.directory  # Directorio de trabajo
-
-
-# A usefull class
-class MoneyLabel:
-    def __init__(
-        self, frame: tk.Frame, cliente: str, bg: str, fg: str, initial_value: int = 0
-    ):
-
-        self.cliente = cliente
-
-        # Create an IntVar for the money value
-        self.money_var = tk.IntVar(value=initial_value)
-
-        # Create a StringVar to hold the formatted display string
-        self.money_label_var = tk.StringVar()
-
-        # Trace changes to the IntVar
-        self.money_var.trace("w", self.update_label)
-
-        # Initialize the label text
-        self.update_label()
-
-        # Create the Label widget
-        self.label = tk.Label(frame, textvariable=self.money_label_var, bg=bg, fg=fg)
-
-    def update_label(self, *args):
-        # Format the value with a dollar sign
-        self.money_label_var.set(f"{self.cliente}: ${self.money_var.get()}")
-
-    def set_value(self, value):
-        # Update the money_var, which will trigger the label update
-        self.money_var.set(value)
-
-    def get_value(self):
-        # Retrieve the current value
-        return self.money_var.get()
-
-    def add_value(self, value):
-        # Add a value to the current value
-        self.money_var.set(self.money_var.get() + value)
-
-    def grid(self, **kwargs):
-        self.label.grid(**kwargs)
-
-    def pack(self, **kwargs):
-        self.label.pack(**kwargs)
-
-    def place(self, **kwargs):
-        self.label.place(**kwargs)
-
-    def destroy(self):
-        self.label.destroy()
+pagos_dir = univ.pagos_dir  # Directorio de pagos
 
 
 def main_window_maker(
@@ -114,13 +70,13 @@ def main_window_maker(
         "Observación": (tk.Entry, str, tk.StringVar()),
     }
 
-    Clientes = ["Ejemplo1", "Ejemplo2", "Ejemplo3", "Ejemplo4"]
+    Clientes = update_clients()
 
     Clientes_frame, Clientes_labels = client_display_maker(ventana, Clientes)
 
-    features_frame, entries = feature_maker(ventana, features, Clientes_labels)
+    features_frame, entries, ingresar_button = feature_maker(ventana, features, Clientes_labels)
 
-    buttom_buttons_frame, buttons = buttom_buttons(ventana, padre)
+    buttom_buttons_frame, buttons = buttom_buttons(ventana, padre, ingresar_button)
 
     return root, entries
 
@@ -161,13 +117,14 @@ def client_display_maker(
             Clientes_frame, cliente=cliente, bg=bg["window"], fg=fg["window"]
         )
         Clientes_labels[cliente].grid(row=i, column=0, padx=5, pady=5, sticky="w")
+        actualizar_moneyLabel(Clientes_labels[cliente])
 
     return Clientes_frame, Clientes_labels
 
 
 def feature_maker(
     ventana: Ventana, features: dict, Clientes: dict[str, MoneyLabel]
-) -> tuple[tk.Frame, dict[tuple[tk.Entry, tk.StringVar]]]:
+) -> tuple[tk.Frame, dict[tuple[tk.Entry, tk.StringVar]], Boton]:
     """
     Función que crea los elementos de la GUI.
 
@@ -179,6 +136,7 @@ def feature_maker(
     Returns:
         tk.Frame: Frame donde se encuentran los elementos.
         dict: Diccionario con los elementos de la GUI.
+        ingresar_button: Botón de ingresar (datos).
 
     Raises:
         AssertionError: Si la ventana no es una instancia de Ventana.
@@ -228,8 +186,13 @@ def feature_maker(
         Función que ingresa los datos de la GUI a la base de datos.
         """
         cliente = features["Cliente"][2].get()
+        cliente = Clientes[cliente]
         ingreso = features["Ingreso"][2].get()
-        Clientes[cliente].add_value(ingreso)
+        pais = features["País Destino"][2].get()
+        fecha = features["Fecha Pago"][2].get()
+        observacion = features["Observación"][2].get()
+
+        agregar_pago(cliente, fecha, pais, ingreso, observacion)
 
     last_element_idx = len(features)
     row = last_element_idx % elements_per_column
@@ -240,15 +203,16 @@ def feature_maker(
         ingresar,
         "output_button",
     )
+    ingresar_button.command = ingresar # This WILL be modified in buttom_buttons
     ingresar_button.grid(
         row=row, column=column * 2, padx=5, pady=5, columnspan=2, sticky="e"
     )
 
-    return features_frame, entries
+    return features_frame, entries, ingresar_button
 
 
 def buttom_buttons(
-    ventana: Ventana, padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk]
+    ventana: Ventana, padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk], ingresar_button: Boton
 ) -> tuple[tk.Frame, dict[Boton]]:
     """
     El objetivo de esta función es crear los botones finales de la GUI.
@@ -256,6 +220,7 @@ def buttom_buttons(
     Args:
         ventana (Ventana): Ventana principal de la GUI.
         padre (Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk]): Ventana padre de la GUI.
+        ingresar_button (Boton): Botón de ingresar.
 
     Returns:
         tk.Frame: Frame donde se encuentran los botones.
@@ -264,6 +229,7 @@ def buttom_buttons(
     Raises:
         AssertionError: Si la ventana no es una instancia de Ventana.
         AssertionError: Si el padre no es una instancia de tk.Tk, tk.Toplevel o TkinterDnD.Tk.
+        AsserionError: Si ingresar_button no es una instancia de Boton.
     """
     assert isinstance(
         ventana, Ventana
@@ -271,6 +237,9 @@ def buttom_buttons(
     assert isinstance(
         padre, (tk.Tk, tk.Toplevel, TkinterDnD.Tk)
     ), f"padre debe ser una instancia de tk.Tk, tk.Toplevel o TkinterDnD.Tk. Se recibió {type(padre)}"
+    assert isinstance(
+        ingresar_button, Boton
+    ), f"ingresar_button debe ser una instancia de Boton. Se recibió {type(ingresar_button)}"
 
     root = ventana.root
     mainFrame = ventana.mainFrame
@@ -285,6 +254,14 @@ def buttom_buttons(
     def go_back():
         root.destroy()
         padre.deiconify()
+    
+    def settings():
+        if platform.system() == "Windows":
+            os.startfile(pagos_dir)
+        elif platform.system() == "Darwin":  # macOS
+            os.system(f"open {pagos_dir}")
+        else:  # Linux and others
+            os.system(f"xdg-open {pagos_dir}")
 
     buttons = {
         "Volver": Boton(
@@ -293,12 +270,24 @@ def buttom_buttons(
             go_back,
             "output_button",
         ),
+        "Ajustes": Boton(buttom_buttons_frame, "Ajustes", settings, "output_button"),
         "Salir": Boton(buttom_buttons_frame, "Salir", quitter, "exit_button"),
+        "Guardar": Boton(buttom_buttons_frame, "Guardar", None, "output_button"),
     }
 
     buttons["Volver"].pack(side=tk.LEFT, padx=5, pady=5)
+    buttons["Ajustes"].pack(side=tk.LEFT, padx=5, pady=5)
     buttons["Salir"].pack(side=tk.RIGHT, padx=5, pady=5)
-
+    buttons["Guardar"].pack(side=tk.RIGHT, padx=5, pady=5)
+    buttons["Guardar"].pack_forget()
+    def guardar_wrapper():
+        save_control_de_pagos()
+        buttons["Guardar"].pack_forget()
+    buttons["Guardar"].configure(command=guardar_wrapper)
+    def ingresar_wrapper():
+        buttons["Guardar"].pack(side=tk.RIGHT, padx=5, pady=5)
+        ingresar_button.command()
+    ingresar_button.configure(command=ingresar_wrapper)
     return buttom_buttons_frame, buttons
 
 

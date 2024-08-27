@@ -624,7 +624,6 @@ def control(
         print(e)
         print("If no liquidations were uploaded and this error arrises, ignore it.")
 
-
     if update_loading_bar:
         update_loading_bar()
 
