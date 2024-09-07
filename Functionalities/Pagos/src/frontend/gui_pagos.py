@@ -22,7 +22,6 @@ from src.frontend.GUI_tools.ventana import Ventana
 from ..backend.control_de_pagos import (
     agregar_pago,
     actualizar_moneyLabel,
-    save_control_de_pagos,
 )
 # from src.frontend.GUI_tools.info_window import InfoBoton
 from src.frontend.GUI_tools.error_window import inputErrorWindow, revisarWindow
@@ -30,6 +29,7 @@ from src.config import universal_variables as univ
 from src.frontend.GUI_tools import GUI_variables as var
 from .moneyLabel import MoneyLabel
 from ..backend.clientes import update_clients
+from ..backend.boleta import actualizar_boleta
 
 # Variables universales:
 bg = var.bg  # Color de fondo
@@ -185,6 +185,10 @@ def feature_maker(
         """
         Función que ingresa los datos de la GUI a la base de datos.
         """
+        # Actualizamos la boleta con los nuevos datos de embarque
+        actualizar_boleta()
+
+        # Obtener los valores a ingresar
         cliente = features["Cliente"][2].get()
         cliente = Clientes[cliente]
         ingreso = features["Ingreso"][2].get()
@@ -192,7 +196,11 @@ def feature_maker(
         fecha = features["Fecha Pago"][2].get()
         observacion = features["Observación"][2].get()
 
+        # Agregamos el pago al control de pagos
         agregar_pago(cliente, fecha, pais, ingreso, observacion)
+
+        # ACtualizamos los valores de los MoneyLabels
+        actualizar_moneyLabels()
 
     last_element_idx = len(features)
     row = last_element_idx % elements_per_column
@@ -272,22 +280,12 @@ def buttom_buttons(
         ),
         "Ajustes": Boton(buttom_buttons_frame, "Ajustes", settings, "output_button"),
         "Salir": Boton(buttom_buttons_frame, "Salir", quitter, "exit_button"),
-        "Guardar": Boton(buttom_buttons_frame, "Guardar", None, "output_button"),
     }
 
     buttons["Volver"].pack(side=tk.LEFT, padx=5, pady=5)
     buttons["Ajustes"].pack(side=tk.LEFT, padx=5, pady=5)
     buttons["Salir"].pack(side=tk.RIGHT, padx=5, pady=5)
-    buttons["Guardar"].pack(side=tk.RIGHT, padx=5, pady=5)
-    buttons["Guardar"].pack_forget()
-    def guardar_wrapper():
-        save_control_de_pagos()
-        buttons["Guardar"].pack_forget()
-    buttons["Guardar"].configure(command=guardar_wrapper)
-    def ingresar_wrapper():
-        buttons["Guardar"].pack(side=tk.RIGHT, padx=5, pady=5)
-        ingresar_button.command()
-    ingresar_button.configure(command=ingresar_wrapper)
+
     return buttom_buttons_frame, buttons
 
 

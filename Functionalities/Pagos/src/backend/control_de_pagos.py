@@ -28,16 +28,7 @@ except FileNotFoundError:
         "Observaciones": [],
     }
     control_de_pagos = pd.DataFrame(control_de_pagos_dict)
-
-
-def actualizar_moneyLabel(widget: MoneyLabel) -> None:
-    """
-    Actualiza el valoe de un `MoneyLabel` a partir de `control_de_pago`.
-    """
-    cliente = widget.cliente
-    money = control_de_pagos[control_de_pagos["Cliente"] == cliente]["Ingreso"].sum()
-    widget.set_value(money)
-
+    control_de_pagos.to_csv(control_de_pagos_path, index=False)
 
 def agregar_pago(
     cliente: MoneyLabel,
@@ -46,7 +37,7 @@ def agregar_pago(
     ingreso: float,
     observacion: str,
     control_de_pagos: pd.DataFrame = control_de_pagos,
-) -> None:
+) -> pd.DataFrame:
     """
     Agrega un pago al control de pagos.
 
@@ -58,10 +49,7 @@ def agregar_pago(
         observacion (str): Observaciones del pago.
 
     Returns:
-        None
-
-    Raises:
-
+        pd.DataFrame: Control de pagos actualizado.
     """
     client_name: str = cliente.cliente
     new_row = {
@@ -72,19 +60,7 @@ def agregar_pago(
         "Observaciones": observacion,
     }
     control_de_pagos.loc[len(control_de_pagos)] = new_row
-    actualizar_moneyLabel(cliente)
 
-    return
-
-def save_control_de_pagos() -> None:
-    """
-    Guarda el control de pagos en la carpeta correspondiente.
-
-    Args:
-        save_button (Boton): Botón que llama a la función.
-
-    Returns:
-        None
-    """
     control_de_pagos.to_csv(control_de_pagos_path, index=False)
-    return
+
+    return control_de_pagos
