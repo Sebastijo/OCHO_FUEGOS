@@ -1,6 +1,6 @@
 """
 El objetivo de este modulo es crear una boleta a partir de la base control y los contratos con los clientes,
-la cual es guardada en un archivo csv.junto al control de pagos.Esta posteriormente será usada para descontar.
+la cual es guardada en un archivo .csv junto al control de pagos.Esta posteriormente será usada para descontar.
 """
 
 import pandas as pd
@@ -29,7 +29,7 @@ def actualizar_boleta() -> pd.DataFrame:
         pd.DataFrame: Boleta con los datos de los clientes y el precio de cada pallet.
     """
     try:
-        boleta: pd.DataFrame = pd.read_csv(boleta_path
+        boleta: pd.DataFrame = pd.read_csv(boleta_path)
     except FileNotFoundError:
         boleta_dict: dict[str, any] = {
             "PalletRowId": [],
@@ -40,8 +40,11 @@ def actualizar_boleta() -> pd.DataFrame:
         boleta.to_csv(boleta_path, index=False)
 
     # Importamos la base embarque quedandonos solo con los elementos que no estan en la boleta
-    embarques: pd.DataFrame = pd.read_excel(embarques_path)
-    embarque = embarque[~embarque["PalletRowId"].isin(boleta["PalletRowId"])]
+    embarques: pd.DataFrame = pd.read_excel(
+        embarques_path,
+        usecols=["PalletRowId", "ReceiverName", "CaliberName", "PackageNetWeight"],
+    )
+    embarques = embarques[~embarques["PalletRowId"].isin(boleta["PalletRowId"])]
 
     contratos: pd.DataFrame = pd.read_excel(contratos_path)
 
@@ -49,7 +52,7 @@ def actualizar_boleta() -> pd.DataFrame:
 
     contrato_key: list[str] = ["Cliente", "Calibre", "KG Caja"]
     embarque_merger_contrato: lis[str] = [
-        "RecieverName",
+        "ReceiverName",
         "CaliberName",
         "PackageNetWeight",
     ]
@@ -57,7 +60,8 @@ def actualizar_boleta() -> pd.DataFrame:
     boleta_push: pd.DataFrame = embarques.merge(
         contratos, how="left", left_on=embarque_merger_contrato, right_on=contrato_key
     )
-    boleta_push = boleta[["PalletRowId", "Cliente", "Precio"]]
+
+    boleta_push = boleta_push[["PalletRowId", "Cliente", "Precio"]]
 
     boleta = pd.concat([boleta, boleta_push], ignore_index=True)
     boleta.to_csv(boleta_path, index=False)

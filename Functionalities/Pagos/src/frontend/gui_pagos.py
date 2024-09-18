@@ -19,11 +19,9 @@ import platform
 # Importamos modulos propios
 from src.frontend.GUI_tools.buttons import Boton
 from src.frontend.GUI_tools.ventana import Ventana
-from ..backend.control_de_pagos import (
-    agregar_pago,
-    actualizar_moneyLabel,
-)
-# from src.frontend.GUI_tools.info_window import InfoBoton
+from ..backend.control_de_pagos import agregar_pago
+from ..backend.calcular_money_label import actualizar_moneyLabels
+from src.frontend.GUI_tools.info_window import InfoBoton
 from src.frontend.GUI_tools.error_window import inputErrorWindow, revisarWindow
 from src.config import universal_variables as univ
 from src.frontend.GUI_tools import GUI_variables as var
@@ -41,7 +39,7 @@ pagos_dir = univ.pagos_dir  # Directorio de pagos
 
 def main_window_maker(
     padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False
-) -> tuple[tk.Tk, dict, tk.Frame, list, tk.Tk, Boton, ttk.Progressbar]:
+) -> tuple[tk.Tk, dict[tuple[tk.Entry, tk.StringVar]]]:
     """
     Función que define los objetos y posiciones de la GUI.
 
@@ -51,6 +49,7 @@ def main_window_maker(
     Returns:
         root: Ventana principal de la GUI.
         entries: Diccionario con los entries de la GUI.
+        Clientes_labels: Diccionario con los MoneyLabels de los clientes.
 
     Raises:
         AssertionError: Si el padre no es una instancia de tk.Tk o TkinterDnD.Tk, tk.Toplevel o False.
@@ -74,7 +73,9 @@ def main_window_maker(
 
     Clientes_frame, Clientes_labels = client_display_maker(ventana, Clientes)
 
-    features_frame, entries, ingresar_button = feature_maker(ventana, features, Clientes_labels)
+    features_frame, entries, ingresar_button = feature_maker(
+        ventana, features, Clientes_labels
+    )
 
     buttom_buttons_frame, buttons = buttom_buttons(ventana, padre, ingresar_button)
 
@@ -83,9 +84,10 @@ def main_window_maker(
 
 def client_display_maker(
     ventana: Ventana, Clientes: list[str]
-) -> tuple[tk.Frame, dict[tk.Label]]:
+) -> tuple[tk.Frame, dict[str, MoneyLabel]]:
     """
     Función que crea el display de los clientes.
+    Para crear el display, se calcula el saldo de cada cliente mediante la función `actualizar_moneyLabels`.
 
     Args:
         ventana (Ventana): Ventana principal de la GUI.
@@ -104,20 +106,23 @@ def client_display_maker(
     ), f"ventana debe ser una instancia de Ventana. Se recibió {type(ventana)}"
     assert isinstance(
         Clientes, list
-    ), f"clientes debe ser una lista. Se recibió {type(clientes)}"
+    ), f"clientes debe ser una lista. Se recibió {type(Clientes)}"
 
     mainFrame = ventana.mainFrame
 
     Clientes_frame = tk.Frame(mainFrame, bd=4, relief=tk.SUNKEN, bg=bg["window"])
     Clientes_frame.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
-    Clientes_labels = {cliente: None for cliente in Clientes}
+    Clientes_labels: dict[str, MoneyLabel] = {cliente: None for cliente in Clientes}
     for i, cliente in enumerate(Clientes):
         Clientes_labels[cliente] = MoneyLabel(
             Clientes_frame, cliente=cliente, bg=bg["window"], fg=fg["window"]
         )
         Clientes_labels[cliente].grid(row=i, column=0, padx=5, pady=5, sticky="w")
-        actualizar_moneyLabel(Clientes_labels[cliente])
+
+    actualizar_boleta()
+
+    actualizar_moneyLabels(Clientes_labels.values())
 
     return Clientes_frame, Clientes_labels
 
@@ -179,6 +184,29 @@ def feature_maker(
             feature_entry = widget(features_frame, textvariable=Var, width=20)
             feature_entry.insert(0, data_type())
         feature_entry.grid(row=row, column=column * 2 + 1, padx=5, pady=5)
+
+        # nos aseguramos de que el ingreso sea un número
+        if feature == "Ingreso":
+
+            def validate_numeric_input(action, value_if_allowed):
+                if action != "1":  # If the action is not insertion (deletion is fine)
+                    return True
+                try:
+                    # Check if the input is a valid float number
+                    float(value_if_allowed)
+                    return True
+                except ValueError:
+                    return False
+
+            validate_numeric_input_command = (
+                features_frame.register(validate_numeric_input),
+                "%d",
+                "%P",
+            )
+            feature_entry.config(
+                validate="key", validatecommand=validate_numeric_input_command
+            )
+
         entries[feature] = (feature_entry, Var)
 
     def ingresar():
@@ -192,6 +220,7 @@ def feature_maker(
         cliente = features["Cliente"][2].get()
         cliente = Clientes[cliente]
         ingreso = features["Ingreso"][2].get()
+        ingreso = float(ingreso)
         pais = features["País Destino"][2].get()
         fecha = features["Fecha Pago"][2].get()
         observacion = features["Observación"][2].get()
@@ -200,7 +229,7 @@ def feature_maker(
         agregar_pago(cliente, fecha, pais, ingreso, observacion)
 
         # ACtualizamos los valores de los MoneyLabels
-        actualizar_moneyLabels()
+        actualizar_moneyLabels([cliente])
 
     last_element_idx = len(features)
     row = last_element_idx % elements_per_column
@@ -211,7 +240,7 @@ def feature_maker(
         ingresar,
         "output_button",
     )
-    ingresar_button.command = ingresar # This WILL be modified in buttom_buttons
+    ingresar_button.command = ingresar  # This WILL be modified in buttom_buttons
     ingresar_button.grid(
         row=row, column=column * 2, padx=5, pady=5, columnspan=2, sticky="e"
     )
@@ -220,7 +249,9 @@ def feature_maker(
 
 
 def buttom_buttons(
-    ventana: Ventana, padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk], ingresar_button: Boton
+    ventana: Ventana,
+    padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk],
+    ingresar_button: Boton,
 ) -> tuple[tk.Frame, dict[Boton]]:
     """
     El objetivo de esta función es crear los botones finales de la GUI.
@@ -262,7 +293,7 @@ def buttom_buttons(
     def go_back():
         root.destroy()
         padre.deiconify()
-    
+
     def settings():
         if platform.system() == "Windows":
             os.startfile(pagos_dir)

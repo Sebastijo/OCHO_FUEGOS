@@ -5,20 +5,21 @@ que el usuario modifique los clientes de la fucionalidad de pagos.
 
 # Importamos las librerias necesarias
 from pathlib import Path
+import pandas as pd
 
 from src.config.universal_variables import pagos_dir
-from src.backend.control_de_pagos import control_de_pagos_path  
-from src.backend.boleta import embarques_path, contratos_path
+from .control_de_pagos import control_de_pagos_path
+from .boleta import embarques_path, contratos_path
 
-clientes_path = pagos_dir / "clientes.csv"
 
 # Leemos el archivo de clientes de existir
 def update_clients() -> list[str]:
-    
-    embarques = pd.read_excel(embarques_path)
-    contratos = pd.read_excel(contratos_path)
+    # Read only the necessary columns
+    embarques = pd.read_excel(embarques_path, usecols=["ReceiverName"])
+    contratos = pd.read_excel(contratos_path, usecols=["Cliente"])
 
-    clientes = list(set(embarques["RecieverName"].to_list() + contratos["Cliente"].to_list()))
+    # Get unique clients using pandas' .unique()
+    clientes = pd.concat([embarques["ReceiverName"], contratos["Cliente"]]).unique()
 
-    return clientes
+    return sorted(clientes.tolist())
 
