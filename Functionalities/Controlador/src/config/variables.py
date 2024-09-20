@@ -7,7 +7,7 @@ import sys
 import re
 
 if __name__ == "__main__":
-    from src.config.universal_variables import ddirectory, controlador_dir
+    from src.config.universal_variables import directory, controlador_dir
 else:
     from src.config.universal_variables import directory, controlador_dir
 

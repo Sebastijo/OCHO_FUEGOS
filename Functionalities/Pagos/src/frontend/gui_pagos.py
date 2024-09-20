@@ -36,7 +36,6 @@ title = var.title  # Título de la ventana principal
 directory = univ.directory  # Directorio de trabajo
 pagos_dir = univ.pagos_dir  # Directorio de pagos
 
-
 def main_window_maker(
     padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False
 ) -> tuple[tk.Tk, dict[tuple[tk.Entry, tk.StringVar]]]:

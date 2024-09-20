@@ -37,14 +37,16 @@ def actualizar_boleta() -> pd.DataFrame:
             "Precio": [],
         }
         boleta: pd.DataFrame = pd.DataFrame(boleta_dict)
-        boleta.to_csv(boleta_path, index=False)
 
     # Importamos la base embarque quedandonos solo con los elementos que no estan en la boleta
     embarques: pd.DataFrame = pd.read_excel(
         embarques_path,
         usecols=["PalletRowId", "ReceiverName", "CaliberName", "PackageNetWeight"],
     )
-    embarques = embarques[~embarques["PalletRowId"].isin(boleta["PalletRowId"])]
+    embarques = embarques.merge(
+        boleta[["PalletRowId"]], how="left", on="PalletRowId", indicator=True
+    )
+    embarques = embarques[embarques["_merge"] == "left_only"].drop("_merge", axis=1)
 
     contratos: pd.DataFrame = pd.read_excel(contratos_path)
 

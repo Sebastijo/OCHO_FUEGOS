@@ -22,6 +22,7 @@ import threading
 import traceback
 from typing import Union
 import sys
+import platform
 
 # modulos propios
 from .file_select import BarraBusqueda
@@ -38,7 +39,8 @@ bg = var.bg  # Color de fondo
 fg = var.fg  # Color de texto
 title = var.title  # Título de la ventana principal
 directory = var.controlador_dir  # Directorio de trabajo
-control_path = os.path.join(directory, "output", "Control.xlsx")  # Path del control
+control_path = directory / "output" / "Control.xlsx"  # Path del control
+ajustes_dir = directory / "Variables"  # Directorio de ajustes
 
 
 def main_window_maker(
@@ -99,8 +101,8 @@ def main_window_maker(
         Este programa te permite gestionar información crucial de embarques, facturas, tarifas y liquidaciones mediante una práctica base de formato Excel. Sigue estos simples pasos:
 
         1. Configuración Inicial:
-        - Dirígete a la ubicación del programa en tu dispositivo y asegúrate de que la carpeta 'Datos del programa>Variables' contenga los archivos esperados (cod_puerto_destino, costo_seco, flete_real, precios_contrato).
-        - Puedes ajustar los contenidos de la carpeta 'Variables' según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
+        - Clickea el botón de ajustes y asegurate que contenga los archivos esperados (cod_puerto_destino, costo_seco, flete_real, precios_contrato).
+        - Puedes ajustar los contenidos de la carpeta 'Variables', clickeando en `Ajustes`, según tus necesidades. No cambies el formato, solo los contenidos (añadir filas al Excel, palabras al diccionario, etc.).
         - Si la carpeta 'Variables' se corrompe, bórrala y vuelve a ejecutar el programa para restablecerla con los valores predeterminados (asegurate de que los contenidos de los ajustes sean los esperados anted de volver a utilizar el programa).
 
         2. Cargar Archivos:
@@ -131,11 +133,20 @@ def main_window_maker(
     def quitter():
         root.destroy()
         sys.exit()
-    
+
     # Boton que cierra la ventana secundaria y vuelve a la principal
     def go_back():
         root.destroy()
         padre.deiconify()
+
+    # Boton que abre la carpeta de ajustes
+    def settings():
+        if platform.system() == "Windows":
+            os.startfile(ajustes_dir)
+        elif platform.system() == "Darwin":  # macOS
+            os.system(f"open {ajustes_dir}")
+        else:  # Linux and others
+            os.system(f"xdg-open {ajustes_dir}")
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
     volver = Boton(
@@ -144,8 +155,7 @@ def main_window_maker(
         go_back,
         "output_button",
     )
-
-    
+    ajustes = Boton(frameFinalButtonsAndBar, "Ajustes", settings, "output_button")
 
     # Creamos el contenido de los outputs:
     outputFrame = tk.Frame(
@@ -187,7 +197,8 @@ def main_window_maker(
     loading_bar_frame.pack()
     loading_bar_frame.pack_forget()
     if padre:
-        volver.pack(side=tk.LEFT, anchor="n", padx=7, pady=(4,0)) 
+        volver.pack(side=tk.LEFT, anchor="n", padx=7, pady=(4, 0))
+    ajustes.pack(side=tk.LEFT, anchor="n", padx=7, pady=(4, 0))
     info.pack(side=tk.LEFT, anchor="n")
     salir.pack(side=tk.RIGHT, anchor="n")
     ejecutar.pack(side=tk.RIGHT, anchor="n")
@@ -476,7 +487,7 @@ def controlador_starter(
 
     if padre:
         root.protocol("WM_DELETE_WINDOW", lambda: padre.destroy())
-    
+
     # Inicio del bucle principal para la ejecución de la interfaz gráfica
     root.mainloop()
 
