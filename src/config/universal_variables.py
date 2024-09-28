@@ -7,8 +7,11 @@ import sys
 import re
 import platform
 from pathlib import Path
+import time
 
 app_name: str = "Ocho Fuegos-Cherry Manager"
+
+start_time = time.time()
 
 
 def get_support_dir(app_name: str) -> Path:

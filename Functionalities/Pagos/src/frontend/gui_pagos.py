@@ -10,7 +10,6 @@ from tkcalendar import DateEntry
 import pandas as pd
 from pathlib import Path
 import os
-import threading
 import traceback
 from typing import Union
 import sys
@@ -35,6 +34,13 @@ fg = var.fg  # Color de texto
 title = var.title  # Título de la ventana principal
 directory = univ.directory  # Directorio de trabajo
 pagos_dir = univ.pagos_dir  # Directorio de pagos
+start_time = univ.start_time  # Hora de inicio de la aplicación
+embarque_path_pointer = univ.embarque_path_pointer
+contratos_path_pointer = univ.contratos_path_pointer
+get_pointer_path = univ.get_pointer_path
+
+embarques_path = get_pointer_path(embarque_path_pointer, "base de embarques")
+
 
 def main_window_maker(
     padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False
@@ -213,7 +219,8 @@ def feature_maker(
         Función que ingresa los datos de la GUI a la base de datos.
         """
         # Actualizamos la boleta con los nuevos datos de embarque
-        actualizar_boleta()
+        if start_time < os.path.getmtime(embarques_path):
+            actualizar_boleta()
 
         # Obtener los valores a ingresar
         cliente = features["Cliente"][2].get()
