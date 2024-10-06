@@ -1,6 +1,6 @@
 """
 El objetivo de este modulo es crear una boleta a partir de la base control y los contratos con los clientes,
-la cual es guardada en un archivo .csv junto al control de pagos.Esta posteriormente será usada para descontar.
+la cual es guardada en un archivo .csv junto al control de pagos. Esta posteriormente será usada para descontar.
 """
 
 import pandas as pd
@@ -38,10 +38,16 @@ def actualizar_boleta() -> pd.DataFrame:
         }
         boleta: pd.DataFrame = pd.DataFrame(boleta_dict)
 
-    # Importamos la base embarque quedandonos solo con los elementos que no estan en la boleta
+    # Importamos la base embarque quedandonos solo con los elementos que no están en la boleta
     embarques: pd.DataFrame = pd.read_excel(
         embarques_path,
-        usecols=["PalletRowId", "ReceiverName", "CaliberName", "PackageNetWeight"],
+        usecols=[
+            "PalletRowId",
+            "ReceiverName",
+            "CaliberName",
+            "PackageNetWeight",
+            "Quantity",
+        ],
     )
     embarques = embarques.merge(
         boleta[["PalletRowId"]], how="left", on="PalletRowId", indicator=True
@@ -62,6 +68,8 @@ def actualizar_boleta() -> pd.DataFrame:
     boleta_push: pd.DataFrame = embarques.merge(
         contratos, how="left", left_on=embarque_merger_contrato, right_on=contrato_key
     )
+
+    boleta_push["Precio"] = boleta_push["Precio"] * boleta_push["Quantity"]
 
     boleta_push = boleta_push[["PalletRowId", "Cliente", "Precio"]]
 
