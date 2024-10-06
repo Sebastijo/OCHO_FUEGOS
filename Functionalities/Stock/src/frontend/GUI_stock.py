@@ -45,7 +45,22 @@ def stock_window_maker(
 
     # Create the main window
     stock_window = Ventana(titulo=title["main"], DnD=True, padre=padre)
-    root = stock_window.ventana
+    root = stock_window.root
     mainFrame = stock_window.mainFrame
 
-    return
+    return root
+
+
+def stock_starter(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> None:
+    """
+    Función que inicia la interfaz gráfica de la aplicación de pagos.
+    Orquestra todos los elementos del modulo.
+    """
+    root = stock_window_maker(padre)
+
+    if padre:
+        root.protocol("WM_DELETE_WINDOW", padre.destroy)
+
+    root.mainloop()
+
+    return root

@@ -11,7 +11,9 @@ import time
 
 app_name: str = "Ocho Fuegos-Cherry Manager"
 
-if not start_time:
+try:
+    start_time
+except NameError:
     start_time = time.time()
 
 
