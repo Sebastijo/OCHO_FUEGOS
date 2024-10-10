@@ -86,7 +86,11 @@ def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
     try:
         with open(pointer_path, "r") as f:
             path = Path(f.read().strip())
-        if not path.exists():
+        try: # HERE
+            path_exists = path.exists()
+        except:
+            raise FileNotFoundError(f"File not found: {path}")
+        if not path_exists:
             raise FileNotFoundError(f"File not found: {path}")
         if not path.is_file():
             raise FileNotFoundError(f"Pointer file should not point to a file: {path}")
@@ -115,8 +119,8 @@ def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
             os.startfile(pointer_path)
             sys.exit()
         elif platform.system() == "Darwin":
-            os.system(f"open {pointer_path}")
+            os.system(f'open "{pointer_path}"')
             sys.exit()
         else:
-            os.system(f"xdg-open {pointer_path}")
+            os.system(f'xdg-open "{pointer_path}"')
             sys.exit()

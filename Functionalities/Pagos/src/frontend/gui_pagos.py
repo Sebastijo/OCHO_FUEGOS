@@ -28,6 +28,7 @@ from .moneyLabel import MoneyLabel
 from ..backend.clientes import update_clients
 from ..backend.boleta import actualizar_boleta
 
+
 # Variables universales:
 bg = var.bg  # Color de fondo
 fg = var.fg  # Color de texto
@@ -304,9 +305,9 @@ def buttom_buttons(
         if platform.system() == "Windows":
             os.startfile(pagos_dir)
         elif platform.system() == "Darwin":  # macOS
-            os.system(f"open {pagos_dir}")
+            os.system(f'open "{pagos_dir}"') # HERE
         else:  # Linux and others
-            os.system(f"xdg-open {pagos_dir}")
+            os.system(f'xdg-open "{pagos_dir}"') # HERE
 
     buttons = {
         "Volver": Boton(

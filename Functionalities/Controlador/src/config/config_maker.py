@@ -15,8 +15,12 @@ import sys
 import shutil
 import pandas as pd
 import re
+from pathlib import Path
+import platform
 
 from src.config.universal_variables import controlador_dir as directory
+
+ajustes_dir = directory.parent
 
 # The path to the Configuraciones folder
 back_up_variables = os.path.join(directory, "back_up_variables")
@@ -48,6 +52,15 @@ def no_se_encuentran_los_archivos_de_NO_TOCAR() -> bool:
         or not os.path.exists(source_precios_contrato)
         or not os.path.exists(source_flete_real)
     ):
+        
+        if platform.system() == "Windows":
+            os.startfile(ajustes_dir)
+        elif platform.system() == "Darwin":  # macOS
+            os.system(f'open "{ajustes_dir}"') # HERE
+        else:  # Linux and others
+            os.system(f'xdg-open "{ajustes_dir}"') # HERE
+
+
         import tkinter as tk
         from tkinter import messagebox
 

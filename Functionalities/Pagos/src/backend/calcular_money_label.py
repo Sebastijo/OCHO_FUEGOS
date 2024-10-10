@@ -12,6 +12,7 @@ from .boleta import boleta_path
 from ..frontend.moneyLabel import MoneyLabel
 
 
+
 def actualizar_moneyLabels(moneyLabels: list[MoneyLabel]) -> None:
     """
     Actualiza el valor de una lista de `MoneyLabel` a partir de `control_de_pago` y una boleta.
