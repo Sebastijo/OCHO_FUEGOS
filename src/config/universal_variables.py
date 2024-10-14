@@ -124,3 +124,9 @@ def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
         else:
             os.system(f'xdg-open "{pointer_path}"')
             sys.exit()
+
+stock_dir = directory / "stock"
+stock_dir.mkdir(parents=True, exist_ok=True)
+
+stock_path_pointer = stock_dir / "ubicación_base_stock.txt"
+stock_limits_path_pointer = stock_dir / "ubicación_base_stock_limits.txt"
