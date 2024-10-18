@@ -9,7 +9,6 @@ import numpy as np
 
 from src.config.universal_variables import (
     stock_dir,
-    stock_path_pointer,
     stock_limits_path_pointer,
     get_pointer_path,
 )
@@ -35,7 +34,7 @@ class Material:
 
 
 class Packing:
-    def __init__(self, name: str, materials: np.array[material]):
+    def __init__(self, name: str, materials: np.ndarray[Material]):
         self.name = name
         self.materials = materials
 
@@ -71,11 +70,12 @@ def stock_file_format_checker(stock_path: Path, stock_limits_path: Path) -> None
             raise FileNotFoundError(f"{path} should be an Excel file.")
 
 
-def get_stock():
+def get_stock(stock_path: Path) -> list[Packing]:
     """
     Function that gets the stock of the materials in the warehouse.
 
-    Args: None
+    Args: 
+        - stock_path (Path): Path to the stock file.
 
     Returns: list[Packing]: List of the packings in the warehouse.
 
@@ -84,29 +84,20 @@ def get_stock():
         - ValueError: If the stock limits file does not have the columns 'item', 'minimum_stock' and 'maximum_stock
     """
 
-    stock_path: Path = get_pointer_path(stock_path_pointer, "base de stock")
     stock_limits_path: Path = get_pointer_path(
         stock_limits_path_pointer, "base de stock limits"
     )
 
     stock_file_format_checker(stock_path, stock_limits_path)
 
-    stock: list[pd.DataFrame] = []
-    stock_limits: list[pd.DataFrame] = []
-
-    stock[0]: pd.DataFrame = pd.read_excel(
-        stock_path, sheet_name="packing_0"
-    ).sort_values(by="item")
-    stock_limits[0]: pd.DataFrame = pd.read_excel(
-        stock_limits_path, sheet_name="packing_0"
-    ).sort_values(by="item")
-
-    stock[1]: pd.DataFrame = pd.read_excel(
-        stock_path, sheet_name="packing_1"
-    ).sort_values(by="item")
-    stock_limits[1]: pd.DataFrame = pd.read_excel(
-        stock_limits_path, sheet_name="packing_1"
-    ).sort_values(by="item")
+    stock: list[pd.DataFrame] = [
+        pd.read_excel(stock_path, sheet_name="packing_0").sort_values(by="item"),
+        pd.read_excel(stock_path, sheet_name="packing_1").sort_values(by="item"),
+    ]
+    stock_limits: list[pd.DataFrame] = [
+        pd.read_excel(stock_limits_path, sheet_name="packing_0").sort_values(by="item"),
+        pd.read_excel(stock_limits_path, sheet_name="packing_1").sort_values(by="item"),
+    ]
 
     for stock_df in stock:
         if not {"item", "stock"} <= set(stock_df.columns):
@@ -135,16 +126,20 @@ def get_stock():
             "The items in the stock and stock limits files should be the same."
         )
 
-    materials: list[np.array[Material]] = []
-    materials[0] = np.empty(len(stock[0]), dtype=Material)
-    materials[1] = np.array(len(stock[1]), dtype=Material)
+    materials: list[np.array[Material]] = [
+        np.empty(len(stock[0]), dtype=Material),
+        np.empty(len(stock[1]), dtype=Material),
+    ]
 
-    for packing in materials:
-        for i in len(packing):
-            assert stock[0]["item"][i] == stock_limits[0]["item"][i]
-            material = Material(stock1["item"][i], stock1["stock"][i])
+    for idx, packing in enumerate(materials):
+        for i in range(len(packing)):
+            assert (
+                stock[idx]["item"][i] == stock_limits[idx]["item"][i]
+            ), "The items in the stock and stock limits files should be the same."
+            material = Material(stock[idx]["item"][i], stock[idx]["stock"][i])
             material.set_limits(
-                stock_limits1["minimum_stock"][i], stock_limits1["maximum_stock"][i]
+                stock_limits[idx]["minimum_stock"][i],
+                stock_limits[idx]["maximum_stock"][i],
             )
             packing[i] = material
 

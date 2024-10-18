@@ -19,7 +19,7 @@ from tkinterdnd2 import *
 from tkmacosx import Button
 
 # modulos propios
-from .GUI_variables import variables as var
+from . import GUI_variables as var
 
 # Variables universales:
 background = var.bg["window"]

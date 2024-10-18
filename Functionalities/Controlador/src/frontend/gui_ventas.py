@@ -144,9 +144,9 @@ def main_window_maker(
         if platform.system() == "Windows":
             os.startfile(ajustes_dir)
         elif platform.system() == "Darwin":  # macOS
-            os.system(f'open "{ajustes_dir}"') # HERE
+            os.system(f'open "{ajustes_dir}"')  # HERE
         else:  # Linux and others
-            os.system(f'xdg-open "{ajustes_dir}"') # HERE
+            os.system(f'xdg-open "{ajustes_dir}"')  # HERE
 
     salir = Boton(frameFinalButtons, "Salir", quitter, "exit_button")
     volver = Boton(
