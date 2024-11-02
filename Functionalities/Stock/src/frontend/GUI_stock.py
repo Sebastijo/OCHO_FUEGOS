@@ -8,6 +8,8 @@ from tkinter import ttk
 from tkinterdnd2 import *
 import sys
 from pathlib import Path
+import platform
+import os
 
 from typing import Union
 
@@ -18,17 +20,24 @@ from src.frontend.GUI_tools.info_window import InfoBoton
 from src.config import universal_variables as univ
 from src.frontend.GUI_tools import GUI_variables as var
 from src.frontend.GUI_tools.file_select import BarraBusqueda
-
 from ..backend.orchestrator import make_report
 from src.config import universal_variables as univ
-
+from src.config.universal_variables import (
+    stock_limits_path_pointer,
+    get_pointer_path,
+)
+from .download_notice import download_notice
 
 # Universal variables
 bg = var.bg  # background color
 fg = var.fg  # Text color
 title = var.title  # Main window title
 directory = univ.directory  # Base directory
-stock_dir = univ.stock_dir  # Stock directory
+ajustes_dir = univ.stock_dir  # Stock directory
+
+stock_limits_path: Path = get_pointer_path(
+    stock_limits_path_pointer, "base de stock limits"
+)
 
 
 def configure_download_button(download_button: Boton, barrasBusqueda: dict) -> None:
@@ -51,7 +60,8 @@ def configure_download_button(download_button: Boton, barrasBusqueda: dict) -> N
                 barrasBusqueda[tipo].get("1.0", "end-1c")
             ).as_posix()
         stock_path = Path(inputPaths["stock"])
-        make_report(stock_path)
+        make_report(stock_path, stock_limits_path)
+        download_notice(download_button.winfo_toplevel())
 
     download_button.configure(command=reporter)
 

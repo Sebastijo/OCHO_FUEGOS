@@ -193,7 +193,7 @@ class Boton:
 
         """
         self.boton.pack_forget()
-    
+
     def winfo_reqheight(self):
         """
         Retorna la altura requerida del botón.
@@ -211,3 +211,12 @@ class Boton:
             int: Ancho requerido del botón.
         """
         return self.boton.winfo_reqwidth()
+
+    def winfo_toplevel(self):
+        """
+        Retorna la ventana superior del botón.
+
+        Returns:
+            tk.Tk: Ventana superior del botón.
+        """
+        return self.boton.winfo_toplevel()

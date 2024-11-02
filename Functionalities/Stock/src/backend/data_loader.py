@@ -1,5 +1,5 @@
 """
-This module's objective is to check the stock of the materials in the warehouse.
+This module's objective is to retrive the stock of the materials in the warehouse.
 A 'packing' is the place were the 'materials' are stored.
 """
 
@@ -7,40 +7,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-from src.config.universal_variables import (
-    stock_dir,
-    stock_limits_path_pointer,
-    get_pointer_path,
-)
-
-
-class Material:
-    def __init__(self, name: str, stock: int):
-        self.name = name
-        self.stock = stock
-        self.minimum_stock = float("inf")
-        self.maximum_stock = float("inf")
-
-    @property
-    def enough_stock(self):
-        return self.stock > self.minimum_stock
-
-    def set_limits(self, minimum_stock: int, maximum_stock: int):
-        self.minimum_stock = minimum_stock
-        self.maximum_stock = maximum_stock
-
-    def __str__(self):
-        return f"{self.name}: {self.stock} units"
-
-
-class Packing:
-    def __init__(self, name: str, materials: np.ndarray[Material]):
-        self.name = name
-        self.materials = materials
-
-    def __str__(self):
-        df = pd.DataFrame([material.__dict__ for material in self.materials])
-        return f"{self.name}: {df.to_string(index=False)}"
+from .classes import Material, Packing
 
 
 def stock_file_format_checker(stock_path: Path, stock_limits_path: Path) -> None:
@@ -70,11 +37,11 @@ def stock_file_format_checker(stock_path: Path, stock_limits_path: Path) -> None
             raise FileNotFoundError(f"{path} should be an Excel file.")
 
 
-def get_stock(stock_path: Path) -> list[Packing]:
+def get_stock(stock_path: Path, stock_limits_path: Path) -> list[Packing]:
     """
     Function that gets the stock of the materials in the warehouse.
 
-    Args: 
+    Args:
         - stock_path (Path): Path to the stock file.
 
     Returns: list[Packing]: List of the packings in the warehouse.
@@ -83,10 +50,6 @@ def get_stock(stock_path: Path) -> list[Packing]:
         - ValueError: If the stock file does not have the columns 'item' and 'stock'.
         - ValueError: If the stock limits file does not have the columns 'item', 'minimum_stock' and 'maximum_stock
     """
-
-    stock_limits_path: Path = get_pointer_path(
-        stock_limits_path_pointer, "base de stock limits"
-    )
 
     stock_file_format_checker(stock_path, stock_limits_path)
 
