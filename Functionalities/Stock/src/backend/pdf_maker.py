@@ -92,7 +92,7 @@ def create_packing_report(
         canvas.drawString(
             indentation + item_width + 10,
             y_position,
-            f"{item.stock} unidades / {item.minimum_stock} mínimas / {item.maximum_stock} máximas",
+            f"{item.stock} unidades / {item.minimum_stock} mínimas / {item.order_ammount} máximas",
         )
 
         y_position -= line_spacing
