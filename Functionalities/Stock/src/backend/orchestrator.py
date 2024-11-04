@@ -7,8 +7,9 @@ import pandas as pd
 import os
 from datetime import date
 
-from .data_loader import Material, Packing, get_stock
+from .data_loader import read_data
 from .pdf_maker import create_stock_report
+from .classes import Packing
 
 today = date.today().strftime("%d_%m_%Y")
 
@@ -18,15 +19,39 @@ file_name = "stock_report_" + today + ".pdf"
 pdf_path = downloads / file_name
 
 
-def make_report(stock_path: Path, stock_limits_path: Path) -> None:
+def make_report(stock_path: Path, kg2box_path: Path, box2material_path: Path) -> Path:
     """
     Function that creates a stock report.
 
     Args:
         - stock_path (Path): Path to the stock file.
+        - kg2box_path (Path): Path to the kg2box file.
+        - box2material_path (Path): Path to the box2material file.
 
-    Returns: None
+    Returns:
+        - pdf_path (Path): Path to the created PDF file.
+
+    Raises:
+        - FileNotFoundError: If any of the files is not found.
+        - ValueError: If any of the files is not an Excel file.
+        - ValueError: If the stock file does not have the columns 'item' and 'stock'.
+        - ValueError: If the stock limits file does not have the columns 'item', 'minimum_stock' and 'maximum
+
     """
 
-    packings: list[Packing] = get_stock(stock_path, stock_limits_path)
+    packings_dict, kg, kg2box_df, box2material_dict = read_data(
+        stock_path, kg2box_path, box2material_path
+    )
+
+    packings: list[Packing] = [
+        Packing(name, materials, kg2box_df, box2material_dict)
+        for name, materials in packings_dict.items()
+    ]
+
+    for packing in packings:
+        kg_float: float = kg.loc[kg["PACKING"] == packing.name, "KG"].values[0]
+        packing.update_minimum_and_maximum_stocks(kg_float)
+
     create_stock_report(pdf_path, packings)
+
+    return pdf_path

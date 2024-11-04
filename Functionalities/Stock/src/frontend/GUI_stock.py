@@ -22,10 +22,6 @@ from src.frontend.GUI_tools import GUI_variables as var
 from src.frontend.GUI_tools.file_select import BarraBusqueda
 from ..backend.orchestrator import make_report
 from src.config import universal_variables as univ
-from src.config.universal_variables import (
-    stock_limits_path_pointer,
-    get_pointer_path,
-)
 from .download_notice import download_notice
 
 # Universal variables
@@ -34,10 +30,6 @@ fg = var.fg  # Text color
 title = var.title  # Main window title
 directory = univ.directory  # Base directory
 ajustes_dir = univ.stock_dir  # Stock directory
-
-stock_limits_path: Path = get_pointer_path(
-    stock_limits_path_pointer, "base de stock limits"
-)
 
 
 def configure_download_button(download_button: Boton, barrasBusqueda: dict) -> None:
@@ -60,8 +52,10 @@ def configure_download_button(download_button: Boton, barrasBusqueda: dict) -> N
                 barrasBusqueda[tipo].get("1.0", "end-1c")
             ).as_posix()
         stock_path = Path(inputPaths["stock"])
-        make_report(stock_path, stock_limits_path)
-        download_notice(download_button.winfo_toplevel())
+        kg2box_path = Path(inputPaths["kg_a_cajas"])
+        box2material_path = Path(inputPaths["cajas_a_material"])
+        pdf_path = make_report(stock_path, kg2box_path, box2material_path)
+        download_notice(download_button.winfo_toplevel(), pdf_path)
 
     download_button.configure(command=reporter)
 
@@ -82,6 +76,8 @@ def barras_maker(mainFrame: tk.Frame) -> tuple[dict, tk.Frame]:
 
     contents: dict = {
         "stock": "Selecciona un archivo .xls de stock",
+        "kg_a_cajas": "Selecciona un archivo .xls de kg a cajas",
+        "cajas_a_material": "Selecciona un archivo .xls de cajas a material",
     }
 
     barrasBusqueda: dict = {}

@@ -22,14 +22,10 @@ bg = var.bg  # background color
 fg = var.fg  # Text color
 title = var.title  # Main window title
 
-today = date.today().strftime("%d_%m_%Y")
-home = Path.home()
-downloads = home / "Downloads"
-file_name = "stock_report_" + today + ".pdf"
-pdf_path = downloads / file_name
 
-
-def download_notice(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk]) -> None:
+def download_notice(
+    padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk], pdf_path: Path
+) -> None:
     """
     Function that creates a simple pop up message notifying the user that the download completed successfully.
     """

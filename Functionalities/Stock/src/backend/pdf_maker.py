@@ -130,6 +130,7 @@ def create_stock_report(
     create_title(canvas, "Stock Report", font)
 
     for packing in packings:
+        packing.round_values()
         create_packing_report(canvas, packing, line_spacing, item_width, font)
 
     # Save the canvas to create the PDF

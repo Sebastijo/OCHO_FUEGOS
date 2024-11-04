@@ -13,7 +13,7 @@ dummy_stock_path = data_dir / "dummy_kg2box.xlsx"  # Path to the dummy stock dat
 random.seed(115)
 
 # Create a dummy stock data
-my_box_types = ["CGA8F1", "CGM8F1", "CGM8F", "PGMC2"]
+my_box_types = ["CGA8F1", "CGM8F1", "CGM8F", "PGMC2", "PGMCJ"]
 
 ammount_of_box_types: int = len(my_box_types)
 
@@ -24,8 +24,8 @@ boxes_per_10kg: list[int] = [random.randint(1, 6) for i in range(len(box_types))
 
 stock_data: pd.DataFrame = pd.DataFrame(
     {
-        "box_type": box_types,
-        "boxes_per_10kg": boxes_per_10kg,
+        "BOX TYPE": box_types,
+        "BOXES PER 10KG": boxes_per_10kg,
     }
 )
 
