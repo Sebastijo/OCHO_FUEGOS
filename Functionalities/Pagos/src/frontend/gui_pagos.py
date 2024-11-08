@@ -77,7 +77,7 @@ def main_window_maker(
 
     Clientes = update_clients()
 
-    Clientes_frame, Clientes_labels = client_display_maker(ventana, Clientes)
+    Clientes_frame, Clientes_labels = client_display_maker(padre, ventana, Clientes)
 
     features_frame, entries, ingresar_button = feature_maker(
         ventana, features, Clientes_labels
@@ -89,7 +89,9 @@ def main_window_maker(
 
 
 def client_display_maker(
-    ventana: Ventana, Clientes: list[str]
+    padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk],
+    ventana: Ventana,
+    Clientes: list[str],
 ) -> tuple[tk.Frame, dict[str, MoneyLabel]]:
     """
     Función que crea el display de los clientes.
@@ -126,7 +128,11 @@ def client_display_maker(
         )
         Clientes_labels[cliente].grid(row=i, column=0, padx=5, pady=5, sticky="w")
 
-    actualizar_boleta()
+    e: Union[pd.DataFrame, Exception] = actualizar_boleta()
+
+    if isinstance(e, Exception):
+        ventana.destroy()
+        raise e
 
     actualizar_moneyLabels(Clientes_labels.values())
 
@@ -332,11 +338,18 @@ def pagos_starter(padre: Union[tk.Tk, tk.Toplevel, TkinterDnD.Tk] = False) -> No
     Función que inicia la interfaz gráfica de la aplicación de pagos.
     Orquestra todos los elementos del modulo.
     """
-    root, entries = main_window_maker(padre)
+    try:
+        root, entries = main_window_maker(padre)
 
-    if padre:
-        root.protocol("WM_DELETE_WINDOW", padre.destroy)
+        if padre:
+            root.protocol("WM_DELETE_WINDOW", padre.destroy)
 
-    root.mainloop()
+        root.mainloop()
 
-    return root
+        return root
+    except Exception as e:
+        if padre:
+            padre.deiconify()
+            inputErrorWindow(padre, e)
+        else:
+            raise e

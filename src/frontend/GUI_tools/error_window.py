@@ -48,7 +48,7 @@ def inputErrorWindow(window: tk.Tk, e: Exception):
 
     label_error_header = tk.Label(
         mainFrame_error,
-        text="No se pudo ejecutar el programa a causa del siguiente error:",
+        text="No se pudo ejecutar el programa a causa del siguiente error:\n",
         bg=background,
         fg=foreground,
         font=font,

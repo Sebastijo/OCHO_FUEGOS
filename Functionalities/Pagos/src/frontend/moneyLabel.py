@@ -1,7 +1,9 @@
 """
 A class for the amount of money each client has in the pagos program.
 """
+
 import tkinter as tk
+
 
 class MoneyLabel:
     def __init__(
@@ -27,7 +29,9 @@ class MoneyLabel:
 
     def update_label(self, *args):
         # Format the value with a dollar sign
-        self.money_label_var.set(f"{self.cliente}: ${self.money_var.get()}")
+        self.money_label_var.set(
+            f"{self.cliente}: ${self.money_var.get():,}".replace(",", ".") 
+        )
 
     def set_value(self, value):
         # Update the money_var, which will trigger the label update
