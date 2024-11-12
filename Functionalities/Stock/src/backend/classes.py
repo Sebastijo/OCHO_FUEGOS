@@ -102,6 +102,7 @@ class Material:
         self.stock = round(self.stock)
         self.minimum_stock = round(self.minimum_stock)
         self.maximum_stock = round(self.maximum_stock)
+        self.order_amount = round(self.order_amount)
 
     def __str__(self):
         return f"{self.name}: {self.stock} unidades/ {self.minimum_stock} min/ {self.maximum_stock} max"

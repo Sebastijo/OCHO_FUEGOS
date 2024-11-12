@@ -10,13 +10,14 @@ from datetime import date
 from .data_loader import read_data
 from .pdf_maker import create_stock_report
 from .classes import Packing
+from .history import append_packing_history
 
-today = date.today().strftime("%d_%m_%Y")
+# today = date.today().strftime("%d_%m_%Y")
 
-home = Path.home()
-downloads = home / "Downloads"
-file_name = "stock_report_" + today + ".pdf"
-pdf_path = downloads / file_name
+# home = Path.home()
+# downloads = home / "Downloads"
+# file_name = "stock_report_" + today + ".pdf"
+# pdf_path = downloads / file_name
 
 
 def make_report(stock_path: Path, kg2box_path: Path, box2material_path: Path) -> Path:
@@ -36,7 +37,6 @@ def make_report(stock_path: Path, kg2box_path: Path, box2material_path: Path) ->
         - ValueError: If any of the files is not an Excel file.
         - ValueError: If the stock file does not have the columns 'item' and 'stock'.
         - ValueError: If the stock limits file does not have the columns 'item', 'minimum_stock' and 'maximum
-
     """
 
     packings_dict, kg, kg2box_df, box2material_dict = read_data(
@@ -52,6 +52,7 @@ def make_report(stock_path: Path, kg2box_path: Path, box2material_path: Path) ->
         kg_float: float = kg.loc[kg["PACKING"] == packing.name, "KG"].values[0]
         packing.update_minimum_and_maximum_stocks(kg_float)
 
-    create_stock_report(pdf_path, packings)
+    file_path = append_packing_history(packings)
+    # create_stock_report(pdf_path, packings)
 
-    return pdf_path
+    return file_path

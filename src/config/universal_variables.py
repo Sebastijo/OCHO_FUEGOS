@@ -8,6 +8,7 @@ import re
 import platform
 from pathlib import Path
 import time
+import pandas as pd
 
 app_name: str = "Ocho Fuegos-Cherry Manager"
 
@@ -72,13 +73,16 @@ embarque_path_pointer = pagos_dir / "ubicación_base_embarques.txt"
 contratos_path_pointer = pagos_dir / "ubicación_base_contratos.txt"
 
 
-def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
+def get_pointer_path(
+    pointer_path: Path, pointer_name: str, create: pd.DataFrame = False
+) -> Path:
     """
     Returns the path of a pointer file. A pointer file is a .txt file witgh just the path of a file that is being pointed to.
 
     Args:
         pointer_path (Path): The path of the pointer file.
         pointer_name (str): The name of the pointer file.
+        create (pd.DataFrame, optional): The DataFrame that should be saved in the file that the pointer is pointing to. Defaults to False.
 
     Returns: path of the file that is being pointed to.
     """
@@ -86,18 +90,28 @@ def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
     try:
         with open(pointer_path, "r") as f:
             path = Path(f.read().strip())
-        try:  # HERE
-            path_exists = path.exists()
-        except:
-            raise FileNotFoundError(f"File not found: {path}")
-        if not path_exists:
-            raise FileNotFoundError(f"File not found: {path}")
-        if not path.is_file():
-            raise FileNotFoundError(f"Pointer file should not point to a file: {path}")
         if not path.suffix in [".xlsx", ".xls", ".csv"]:
             raise FileNotFoundError(
                 f"Pointer file should point to an Excel or CSV file: {path}"
             )
+        try:
+            try:  # HERE
+                path_exists = path.exists()
+            except:
+                raise FileNotFoundError(f"File not found: {path}")
+            if not path_exists:
+                raise FileNotFoundError(f"File not found: {path}")
+            if not path.is_file():
+                raise FileNotFoundError(
+                    f"Pointer file should not point to a file: {path}"
+                )
+        except FileNotFoundError as e:
+            if isinstance(create, pd.DataFrame):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                create.to_excel(path, index=False)
+                return path
+            else:
+                raise e
         return path
 
     except FileNotFoundError:
@@ -128,3 +142,6 @@ def get_pointer_path(pointer_path: Path, pointer_name: str) -> Path:
 
 stock_dir = directory / "stock"
 stock_dir.mkdir(parents=True, exist_ok=True)
+packing_history_pointer: Path = stock_dir / "packing_history_pointer.txt"
+history_logs_dir: Path = stock_dir / "history_logs"
+history_logs_dir.mkdir(parents=True, exist_ok=True)
