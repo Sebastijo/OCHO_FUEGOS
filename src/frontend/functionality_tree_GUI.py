@@ -24,7 +24,8 @@ if __name__ == "__main__":
     from src.frontend.GUI_tools import GUI_variables as var
     from Functionalities.Controlador.__main__ import run_controlador
     from Functionalities.Pagos.__main__ import run_pagos
-    from Functionalities.Stock.__main__ import run_stock
+
+    # from Functionalities.Stock.__main__ import run_stock # Ommited for the no-stock branch
 else:
     from .GUI_tools.ventana import Ventana
     from .GUI_tools.buttons import Boton
@@ -32,7 +33,8 @@ else:
     from .GUI_tools import GUI_variables as var
     from Functionalities.Controlador.__main__ import run_controlador
     from Functionalities.Pagos.__main__ import run_pagos
-    from Functionalities.Stock.__main__ import run_stock
+
+    # from Functionalities.Stock.__main__ import run_stock # Ommited for the no-stock branch
 
 # Variables universales:
 bg = var.bg  # Color de fondo
@@ -98,7 +100,7 @@ def functionality_tree_window_maker():
     functionalities = {
         "Base Control": execute_and_destroy_window(run_controlador),
         "Pagos": execute_and_destroy_window(run_pagos),
-        "Stock": execute_and_destroy_window(run_stock),
+        # "Stock": execute_and_destroy_window(run_stock), # Ommited for the no-stock branch
         "Ajustes": lambda: settings(),
     }
     buttons = {}
