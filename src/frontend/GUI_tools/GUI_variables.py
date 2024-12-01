@@ -14,13 +14,13 @@ bg = {
     "output_button": "#001693",
     "exit_button": "#A00000",
     "window_text": "#000739",
-    "settings_button": "#8d90a5",
+    "settings_button": "#727485",
 }
 bg_on_enter = {
     "?": "#FCFF45",
     "output_button": "#000D56",
     "exit_button": "#6B0000",
-    "settings_button": "#a4a4a4",
+    "settings_button": "#5c5d6b",
 }
 fg = {
     "window": "#DDDDDD",
