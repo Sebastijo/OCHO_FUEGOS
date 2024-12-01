@@ -13,6 +13,7 @@ import threading
 import traceback
 import sys
 import threading
+import platform
 
 # Importamos paquetes propios
 
@@ -86,19 +87,29 @@ def functionality_tree_window_maker():
 
         return wrapper
 
+    def settings():
+        if platform.system() == "Windows":
+            os.startfile(univ.directory)
+        elif platform.system() == "Darwin":  # macOS
+            os.system(f'open "{univ.directory}"')  # HERE
+        else:  # Linux and others
+            os.system(f'xdg-open "{univ.directory}"')  # HERE
+
     functionalities = {
         "Base Control": execute_and_destroy_window(run_controlador),
         "Pagos": execute_and_destroy_window(run_pagos),
         "Stock": execute_and_destroy_window(run_stock),
+        "Ajustes": lambda: settings(),
     }
     buttons = {}
 
     for idx, functionality in enumerate(functionalities):
+        style = "output_button" if not functionality == "Ajustes" else "settings_button"
         buttons[functionality] = Boton(
             mainFrame,
             text=functionality,
             command=lambda: print("Funcionalidad no implementada"),
-            style="output_button",
+            style=style,
             width=175,
         )
 

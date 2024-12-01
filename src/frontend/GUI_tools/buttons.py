@@ -53,10 +53,9 @@ class Boton:
             AssertionError: Si el estilo no es "output_button" o "exit_button".
         """
 
-        assert style in (
-            "output_button",
-            "exit_button",
-        ), "El estilo del botón debe ser 'output_button' o 'exit_button'."
+        assert (
+            style in bg
+        ), f"El estilo del botón debe estar en {bg.keys()}, pero se entregó {style}"
 
         # Crear el botón
         self.style = style
