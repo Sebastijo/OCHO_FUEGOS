@@ -1,5 +1,6 @@
 """
-Archivo con las variables universales. La idea es llamar desde acá a todas las variables que se necesiten en distintos archivos del programa.
+Archivo con las variables universales. La idea es llamar desde acá a todas las
+variables que se necesiten en distintos archivos del programa.
 """
 
 import os
@@ -9,9 +10,12 @@ import platform
 from pathlib import Path
 import time
 import pandas as pd
+from datetime import date
 
 app_name: str = "Ocho Fuegos-Cherry Manager"
 
+# we define the start time of the program. I believe it is used to not
+# check files in pagos again unless they have been modified dring the current session.
 try:
     start_time
 except NameError:
@@ -71,6 +75,9 @@ pagos_dir.mkdir(parents=True, exist_ok=True)
 
 embarque_path_pointer = pagos_dir / "ubicación_base_embarques.txt"
 contratos_path_pointer = pagos_dir / "ubicación_base_contratos.txt"
+
+pagos_history_log_dir = pagos_dir / "history_logs"
+pagos_history_log_dir.mkdir(parents=True, exist_ok=True)
 
 
 def get_pointer_path(
@@ -145,3 +152,42 @@ stock_dir.mkdir(parents=True, exist_ok=True)
 packing_history_pointer: Path = stock_dir / "packing_history_pointer.txt"
 history_logs_dir: Path = stock_dir / "history_logs"
 history_logs_dir.mkdir(parents=True, exist_ok=True)
+
+
+history_types: dict[str, Path] = {
+    "pagos": pagos_history_log_dir,
+    "stock": history_logs_dir,
+}
+
+
+def log_history(type: str, df: pd.DataFrame) -> None:
+    """
+    Logs the history of a DataFrame in a CSV.
+
+    Args:
+        type (str): The type of history to log.
+        df (pd.DataFrame): The DataFrame to log.
+
+    Raises:
+        AssertionError: If type is not a string.
+        AssertionError: If type is not in history_types.
+        AssertionError: If df is not a DataFrame.
+    """
+
+    assert isinstance(type, str), f"type must be a string, not {type}"
+    assert (
+        type in history_types
+    ), f"Invalid type: {type}. Should be one of {list(history_types.keys())}"
+    assert isinstance(df, pd.DataFrame), f"df must be a DataFrame, not {type}"
+
+    today = date.today().strftime("%d-%m-%Y")
+    history_dir = history_types[type]
+    history_path = history_dir / f"{today}.csv"
+
+    df.to_csv(history_path, index=False)
+
+    history_files = sorted(history_dir.glob("*.csv"))
+
+    while len(history_files) > 30:
+        oldest_file = history_files.pop(0)
+        oldest_file.unlink()

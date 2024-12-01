@@ -12,7 +12,6 @@ from .boleta import boleta_path
 from ..frontend.moneyLabel import MoneyLabel
 
 
-
 def actualizar_moneyLabels(moneyLabels: list[MoneyLabel]) -> None:
     """
     Actualiza el valor de una lista de `MoneyLabel` a partir de `control_de_pago` y una boleta.
@@ -45,13 +44,23 @@ def actualizar_moneyLabels(moneyLabels: list[MoneyLabel]) -> None:
         widget = moneyLabels[0]
         pagos = control_de_pagos[control_de_pagos["Cliente"] == widget.cliente].sum()
         boletas = boleta[boleta["Cliente"] == widget.cliente].sum()
-        money = pagos["Ingreso"] - boletas["Precio"]
-        widget.set_value(money)
+        pagado = pagos["Ingreso"]
+        utilizado = boletas["Precio"]
+        neto = pagado - utilizado
+        widget.set_value(pagado, utilizado, neto)
     else:
         grouped_control_de_pagos = control_de_pagos.groupby("Cliente").sum()
         grouped_boleta = boleta.groupby("Cliente").sum()
 
-        money = grouped_control_de_pagos["Ingreso"] - grouped_boleta["Precio"]
+        grouped_pagado = grouped_control_de_pagos["Ingreso"]
+        grouped_utilizado = grouped_boleta["Precio"]
+
+        grouped_neto = grouped_pagado - grouped_utilizado
 
         for widget in moneyLabels:
-            widget.set_value(money[widget.cliente])
+            pagado = grouped_pagado[widget.cliente]
+            utilizado = grouped_utilizado[widget.cliente]
+            neto = grouped_neto[widget.cliente]
+            widget.set_value(pagado, utilizado, neto)
+    
+    

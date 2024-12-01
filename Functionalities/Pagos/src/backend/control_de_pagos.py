@@ -11,10 +11,12 @@ from datetime import datetime
 import tkinter as tk
 from pathlib import Path
 
-from src.config.universal_variables import pagos_dir
+from src.config.universal_variables import pagos_dir, log_history
 from ..frontend.moneyLabel import MoneyLabel
 
 control_de_pagos_path = pagos_dir / "control_de_pagos.csv"
+
+today = datetime.today().strftime("%d-%m-%Y")
 
 # Leemos el control de pagos guardado en el cache
 try:
@@ -29,6 +31,7 @@ except FileNotFoundError:
     }
     control_de_pagos = pd.DataFrame(control_de_pagos_dict)
     control_de_pagos.to_csv(control_de_pagos_path, index=False)
+
 
 def agregar_pago(
     cliente: MoneyLabel,
@@ -62,5 +65,7 @@ def agregar_pago(
     control_de_pagos.loc[len(control_de_pagos)] = new_row
 
     control_de_pagos.to_csv(control_de_pagos_path, index=False)
+
+    log_history("pagos", control_de_pagos)
 
     return control_de_pagos

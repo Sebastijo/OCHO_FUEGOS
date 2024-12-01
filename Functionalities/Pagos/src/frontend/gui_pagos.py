@@ -253,7 +253,7 @@ def feature_maker(
         ingresar,
         "output_button",
     )
-    ingresar_button.command = ingresar  # This WILL be modified in buttom_buttons
+    ingresar_button.command = ingresar  # This WILL be modified in buttom_buttons (will it?)
     ingresar_button.grid(
         row=row, column=column * 2, padx=5, pady=5, columnspan=2, sticky="e"
     )
