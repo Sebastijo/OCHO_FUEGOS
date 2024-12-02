@@ -1,0 +1,24 @@
+Para compilar el programa, es necesario seguir los siguientes pasos:
+
+1. Hacer un pull del branch "No-Stock-Functionality" disponible en https://github.com/Sebastijo/OCHO_FUEGOS/tree/No-Stock-Functionality
+Asumiré que todo fue guardado en una carpeta con path `/path/to/your/folder`, la cual debe contener el archivo `__main__.py` junto con el resto de archivos.
+
+2. Obtener una copia de la instancia de python.
+
+3. Desde la línea de comandos de mac, activar la instancia de python descargada. Para conda es `conda activate my_python_instance`.
+
+4. Desde la línea de comandos de mac, dirigirse a `/path/to/your/folder`. Para esto, ingresa `cd /path/to/your/folder` en la línea de comandos.
+
+5. Correr el siguiente código en la línea de comandos (ejecuta pyinstaller, que transforma archivos de python en aplicaciones de mac).
+```
+pyinstaller --windowed --icon=controlador.png -n "Cherry Manager" --hidden-import babel.numbers  __main__.py --additional-hooks-dir=.
+```
+
+6. (Probable) Si te tira error de que se alcanzó el máximo número de iteraciones, es normal, sigue las instrucciones que salen en la terminal: consisten en cambiar un archivo `Cherry Manager.spec` creado en `/path/to/your/folder` (cambiando la variable que indica el número máximo de iteraciones, las instrucciones lo explican perfect, es copiar pegar).
+
+7. Luego de completar 5 (o 6. de ser necesario), se creará una carpeta bajo el nombre de `dist` en `/path/to/your/folder`, esto contiene una carpeta `Cherry Manager` la cual contiene la aplicación `Cherry Manager`. Esta aplicación es lo único que importa. Sácala de ahí, ponla en otro lugar e intenta correrla.
+
+8. Si sabes transformar una aplicación de mac a pkg, GOD, si no, pico ahí vemos como me la pasas xD.
+
+
+NOTA: Correr la aplicación crea un directory `Ocho_Fuegos_Cherry_Manager` en `AppData`, para Windows, y `Application Support`, en MacOS. Menciono esto porque me imagino que te interesa borrarlo. De todas formas, con la app recién instalada, el peso es negligible. La app creará el directorio cada vez que se corra, si es que este aún no existe (pseudo virus xD).

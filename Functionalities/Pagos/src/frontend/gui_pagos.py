@@ -192,6 +192,11 @@ def feature_maker(
         if widget == tk.OptionMenu:
             feature_entry = widget(features_frame, Var, *Clientes)
             feature_entry.config(width=16)
+        elif widget == DateEntry:
+            feature_entry = widget(
+                features_frame, textvariable=Var, width=20, date_pattern="dd/mm/y"
+            )
+            feature_entry.insert(0, data_type())
         else:
             feature_entry = widget(features_frame, textvariable=Var, width=20)
             feature_entry.insert(0, data_type())
@@ -253,7 +258,9 @@ def feature_maker(
         ingresar,
         "output_button",
     )
-    ingresar_button.command = ingresar  # This WILL be modified in buttom_buttons (will it?)
+    ingresar_button.command = (
+        ingresar  # This WILL be modified in buttom_buttons (will it?)
+    )
     ingresar_button.grid(
         row=row, column=column * 2, padx=5, pady=5, columnspan=2, sticky="e"
     )
